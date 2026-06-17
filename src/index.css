@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-app-bg text-text-primary font-sans antialiased;
+    min-width: 1280px;
+  }
+
+  * {
+    @apply border-app-border;
+  }
+}
+
+@layer components {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #2A2D3A transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #2A2D3A;
+    border-radius: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: #3A3D4A;
+  }
+
+  .input-base {
+    @apply w-full bg-app-input border border-app-border rounded px-3 py-2 text-sm text-text-primary
+      placeholder:text-text-secondary focus:outline-none focus:border-accent transition-colors;
+  }
+
+  .btn-icon {
+    @apply inline-flex items-center justify-center rounded text-text-secondary
+      hover:text-text-primary hover:bg-app-hover transition-colors;
+  }
+}
+
+/* react-markdown / rehype-highlight */
+.rusty-markdown {
+  @apply text-sm leading-relaxed text-text-primary;
+}
+.rusty-markdown h1,
+.rusty-markdown h2,
+.rusty-markdown h3 {
+  @apply font-semibold mt-3 mb-2 text-text-primary;
+}
+.rusty-markdown h1 {
+  @apply text-base;
+}
+.rusty-markdown h2 {
+  @apply text-sm;
+}
+.rusty-markdown h3 {
+  @apply text-sm;
+}
+.rusty-markdown p {
+  @apply my-1.5;
+}
+.rusty-markdown ul,
+.rusty-markdown ol {
+  @apply my-1.5 pl-5;
+}
+.rusty-markdown ul {
+  @apply list-disc;
+}
+.rusty-markdown ol {
+  @apply list-decimal;
+}
+.rusty-markdown li {
+  @apply my-0.5;
+}
+.rusty-markdown a {
+  @apply text-info underline hover:opacity-80;
+}
+.rusty-markdown blockquote {
+  @apply border-l-2 border-app-border pl-3 text-text-secondary italic my-2;
+}
+.rusty-markdown code {
+  @apply font-mono text-[12px] bg-app-bg px-1.5 py-0.5 rounded;
+}
+.rusty-markdown pre {
+  @apply bg-app-bg border border-app-border rounded-md p-3 my-2 overflow-x-auto;
+}
+.rusty-markdown pre code {
+  @apply bg-transparent p-0;
+}
+.rusty-markdown table {
+  @apply w-full border-collapse my-2 text-xs;
+}
+.rusty-markdown th,
+.rusty-markdown td {
+  @apply border border-app-border px-2 py-1 text-left;
+}
+.rusty-markdown th {
+  @apply bg-app-hover;
+}
+
+/* highlight.js dark theme (subset) */
+.hljs {
+  color: #E8EAF0;
+  background: transparent;
+}
+.hljs-comment,
+.hljs-quote {
+  color: #6B7280;
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-type {
+  color: #E07B39;
+}
+.hljs-string,
+.hljs-attr,
+.hljs-template-tag,
+.hljs-template-variable {
+  color: #22C55E;
+}
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-constant {
+  color: #3B82F6;
+}
+.hljs-title,
+.hljs-section,
+.hljs-function .hljs-title {
+  color: #F59E0B;
+}
+.hljs-tag,
+.hljs-name {
+  color: #3B82F6;
+}
+.hljs-attribute {
+  color: #E07B39;
+}
+.hljs-meta {
+  color: #6B7280;
+}
+.hljs-deletion {
+  color: #EF4444;
+}
+.hljs-addition {
+  color: #22C55E;
+}
