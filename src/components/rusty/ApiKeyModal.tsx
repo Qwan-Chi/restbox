@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApiKeyStore } from '@/store/useApiKeyStore'
 import { PROVIDERS, getProvider } from '@/services/providers'
-import { checkApiKey, fetchModels } from '@/services/rusty'
+import { fetchModels } from '@/services/rusty'
+import type { FetchModelsResult } from '@/services/rusty'
 import { useT } from '@/utils/i18n'
 import { useI18nStore } from '@/store/useI18nStore'
 import { cn } from '@/utils/cn'
@@ -10,12 +11,14 @@ interface Props {
   onClose: () => void
 }
 
+type KeyStatus = 'idle' | 'loading' | 'ok' | 'error'
+
 export function ApiKeyModal({ onClose }: Props) {
   const t = useT()
   const isEn = useI18nStore((s) => s.lang) === 'en'
 
   const providerId = useApiKeyStore((s) => s.providerId)
-  const apiKey = useApiKeyStore((s) => s.apiKey)
+  const storedApiKey = useApiKeyStore((s) => s.apiKey)
   const model = useApiKeyStore((s) => s.model)
   const customBaseUrl = useApiKeyStore((s) => s.customBaseUrl)
   const customModel = useApiKeyStore((s) => s.customModel)
@@ -30,44 +33,67 @@ export function ApiKeyModal({ onClose }: Props) {
   const currentModel = provider.custom ? customModel : model || provider.defaultModel
   const baseUrl = provider.custom ? customBaseUrl : provider.baseUrl
 
-  const [keyValue, setKeyValue] = useState(apiKey)
+  const [keyValue, setKeyValue] = useState(storedApiKey)
   const [showKey, setShowKey] = useState(false)
-  const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
   const [saved, setSaved] = useState(false)
-  const [dynamicModels, setDynamicModels] = useState<string[]>([])
-  const [modelsLoading, setModelsLoading] = useState(false)
-  const [modelsSource, setModelsSource] = useState<'api' | 'fallback' | null>(null)
+
+  const [models, setModels] = useState<string[]>([])
+  const [keyStatus, setKeyStatus] = useState<KeyStatus>('idle')
+  const [keyError, setKeyError] = useState<string | null>(null)
   const currentModelRef = useRef(currentModel)
   currentModelRef.current = currentModel
 
-  useEffect(() => {
-    setTestResult(null)
-    setSaved(false)
-  }, [keyValue, providerId, model, customModel, customBaseUrl])
+  const doFetchModels = useCallback(
+    async (key: string, pid: string, url: string, cModel?: string) => {
+      if (!key.trim()) {
+        setModels([])
+        setKeyStatus('idle')
+        return
+      }
+      setKeyStatus('loading')
+      setKeyError(null)
+      const result: FetchModelsResult = await fetchModels(pid, key, url, cModel)
+      setModels(result.models)
+      if (result.source === 'api') {
+        setKeyStatus('ok')
+        if (result.models.length > 0 && !result.models.includes(currentModelRef.current)) {
+          if (pid === 'custom') {
+            setCustomModel(result.models[0])
+          } else {
+            setModel(result.models[0])
+          }
+        }
+      } else if (result.error) {
+        setKeyStatus('error')
+        setKeyError(result.error)
+      } else {
+        setKeyStatus('ok')
+      }
+    },
+    [setModel, setCustomModel],
+  )
 
   useEffect(() => {
-    if (provider.custom || !keyValue.trim()) {
-      setDynamicModels([])
-      setModelsSource(null)
+    if (!keyValue.trim()) {
+      setModels([])
+      setKeyStatus('idle')
+      setKeyError(null)
       return
     }
-    let cancelled = false
-    setModelsLoading(true)
-    void fetchModels(providerId, keyValue, provider.baseUrl).then((result) => {
-      if (cancelled) return
-      setDynamicModels(result.models)
-      setModelsSource(result.source)
-      setModelsLoading(false)
-      if (result.source === 'api' && result.models.length > 0 && !result.models.includes(currentModelRef.current)) {
-        setModel(result.models[0])
-      }
-    })
-    return () => {
-      cancelled = true
-    }
+    const timer = setTimeout(() => {
+      void doFetchModels(keyValue, providerId, provider.custom ? customBaseUrl : provider.baseUrl, customModel)
+    }, 500)
+    return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [providerId, keyValue])
+  }, [keyValue, providerId, customBaseUrl])
+
+  const handleProviderChange = (pid: string) => {
+    setProvider(pid)
+    setKeyValue('')
+    setModels([])
+    setKeyStatus('idle')
+    setKeyError(null)
+  }
 
   const handleSave = () => {
     setApiKey(keyValue)
@@ -76,43 +102,35 @@ export function ApiKeyModal({ onClose }: Props) {
     setTimeout(() => setSaved(false), 1500)
   }
 
-  const handleTest = async () => {
-    setTesting(true)
-    setTestResult(null)
-    setApiKey(keyValue)
-    if (provider.custom) setCustomModel(customModel)
-    const result = await checkApiKey()
-    setTestResult(result)
-    setTesting(false)
+  const handleTest = () => {
+    void doFetchModels(keyValue, providerId, provider.custom ? customBaseUrl : provider.baseUrl, customModel)
   }
 
   const handleClear = () => {
     clear()
     setKeyValue('')
-    setTestResult(null)
+    setModels([])
+    setKeyStatus('idle')
+    setKeyError(null)
   }
 
-  const canSave = keyValue.trim().length > 0 && (!provider.custom || (baseUrl.trim().length > 0 && currentModel.trim().length > 0))
+  const canSave =
+    keyValue.trim().length > 0 &&
+    (!provider.custom || (baseUrl.trim().length > 0 && currentModel.trim().length > 0))
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div
         className="w-[520px] max-w-[92vw] max-h-[90vh] flex flex-col bg-app-panel border border-app-border rounded-lg shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-app-border shrink-0">
-          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-            {t('apikey.title')}
-          </h3>
-          <button onClick={onClose} className="btn-icon h-7 w-7 text-xs">
-            ✕
-          </button>
+          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">{t('apikey.title')}</h3>
+          <button onClick={onClose} className="btn-icon h-7 w-7 text-xs">✕</button>
         </div>
 
         <div className="overflow-y-auto scrollbar-thin p-5 space-y-4">
+          {/* Provider */}
           <div>
             <label className="block text-xs text-text-secondary mb-2 font-medium">
               {isEn ? 'Provider' : 'Провайдер'}
@@ -121,11 +139,7 @@ export function ApiKeyModal({ onClose }: Props) {
               {PROVIDERS.map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => {
-                    setProvider(p.id)
-                    setKeyValue('')
-                    setTestResult(null)
-                  }}
+                  onClick={() => handleProviderChange(p.id)}
                   className={cn(
                     'flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg border text-xs transition-all',
                     providerId === p.id
@@ -141,12 +155,11 @@ export function ApiKeyModal({ onClose }: Props) {
             </div>
           </div>
 
+          {/* Custom: Base URL + Model input */}
           {provider.custom && (
             <>
               <div>
-                <label className="block text-xs text-text-secondary mb-1 font-medium">
-                  {isEn ? 'Base URL' : 'Base URL'}
-                </label>
+                <label className="block text-xs text-text-secondary mb-1 font-medium">Base URL</label>
                 <input
                   value={customBaseUrl}
                   onChange={(e) => setCustomBaseUrl(e.target.value)}
@@ -154,68 +167,59 @@ export function ApiKeyModal({ onClose }: Props) {
                   className="input-base font-mono text-xs"
                 />
               </div>
-              <div>
-                <label className="block text-xs text-text-secondary mb-1 font-medium">
-                  {isEn ? 'Model name' : 'Имя модели'}
-                </label>
-                <input
-                  value={customModel}
-                  onChange={(e) => setCustomModel(e.target.value)}
-                  placeholder="gpt-4o-mini"
-                  className="input-base font-mono text-xs"
+              {keyStatus === 'error' || models.length === 0 ? (
+                <div>
+                  <label className="block text-xs text-text-secondary mb-1 font-medium">
+                    {isEn ? 'Model name' : 'Имя модели'}
+                  </label>
+                  <input
+                    value={customModel}
+                    onChange={(e) => setCustomModel(e.target.value)}
+                    placeholder="gpt-4o-mini"
+                    className="input-base font-mono text-xs"
+                  />
+                </div>
+              ) : (
+                <ModelSelect
+                  models={models}
+                  currentModel={currentModel}
+                  keyStatus={keyStatus}
+                  onChange={(m) => setCustomModel(m)}
+                  isEn={isEn}
+                  keyValue={keyValue}
                 />
-              </div>
+              )}
             </>
           )}
 
+          {/* Standard providers: Model dropdown */}
           {!provider.custom && (
-            <div>
-              <label className="block text-xs text-text-secondary mb-1 font-medium flex items-center gap-2">
-                {isEn ? 'Model' : 'Модель'}
-                {modelsLoading && (
-                  <span className="inline-block w-3 h-3 border border-app-border border-t-accent rounded-full animate-spin" />
-                )}
-                {modelsSource === 'api' && !modelsLoading && (
-                  <span className="text-[10px] text-success">● API</span>
-                )}
-                {modelsSource === 'fallback' && !modelsLoading && keyValue.trim() && (
-                  <span className="text-[10px] text-warning" title="Не удалось загрузить список моделей">
-                    ● fallback
-                  </span>
-                )}
-              </label>
-              <select
-                value={currentModel}
-                onChange={(e) => setModel(e.target.value)}
-                className="input-base text-xs"
-              >
-                {(dynamicModels.length > 0 ? dynamicModels : provider.models).map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-                {dynamicModels.length === 0 && modelsSource === null && keyValue.trim() && (
-                  <option value={currentModel} disabled>
-                    {isEn ? 'Loading models…' : 'Загрузка моделей…'}
-                  </option>
-                )}
-                {dynamicModels.length === 0 && !keyValue.trim() && (
-                  <option value={currentModel} disabled>
-                    {isEn ? 'Enter API key to load models' : 'Введите ключ для загрузки моделей'}
-                  </option>
-                )}
-              </select>
-            </div>
+            <ModelSelect
+              models={models}
+              currentModel={currentModel}
+              keyStatus={keyStatus}
+              onChange={(m) => setModel(m)}
+              isEn={isEn}
+              keyValue={keyValue}
+            />
           )}
 
+          {/* API Key */}
           <div>
-            <label className="block text-xs text-text-secondary mb-1.5 font-medium">
+            <label className="block text-xs text-text-secondary mb-1.5 font-medium flex items-center gap-2">
               {isEn ? 'API Key' : 'API-ключ'}
+              {keyStatus === 'ok' && <span className="text-success text-xs">✅</span>}
+              {keyStatus === 'error' && <span className="text-error text-xs">❌</span>}
             </label>
             <div className="relative">
               <input
                 value={keyValue}
                 onChange={(e) => setKeyValue(e.target.value)}
+                onBlur={() => {
+                  if (keyValue.trim()) {
+                    void doFetchModels(keyValue, providerId, provider.custom ? customBaseUrl : provider.baseUrl, customModel)
+                  }
+                }}
                 type={showKey ? 'text' : 'password'}
                 placeholder={provider.keyPlaceholder}
                 className="input-base font-mono text-xs pr-9"
@@ -232,45 +236,42 @@ export function ApiKeyModal({ onClose }: Props) {
                 {showKey ? '🙈' : '👁'}
               </button>
             </div>
+            {keyStatus === 'error' && keyError && (
+              <p className="mt-1 text-[11px] text-error">
+                {keyError === '401'
+                  ? isEn
+                    ? 'Invalid API key'
+                    : 'Неверный API-ключ'
+                  : isEn
+                    ? `Error: ${keyError}`
+                    : `Ошибка: ${keyError}`}
+              </p>
+            )}
           </div>
 
-          {testResult && (
-            <div
-              className={cn(
-                'p-2.5 rounded-lg border text-xs',
-                testResult.ok
-                  ? 'border-success/30 bg-success/10 text-success'
-                  : 'border-error/30 bg-error/10 text-error',
-              )}
-            >
-              {testResult.ok ? '✓' : '✗'} {testResult.message}
-            </div>
-          )}
-
+          {/* Buttons */}
           <div className="flex items-center gap-2">
             <button
               onClick={handleSave}
               disabled={!canSave}
               className={cn(
                 'flex-1 px-3 py-2 text-xs font-medium rounded transition-colors',
-                canSave
-                  ? 'bg-accent text-white hover:bg-accent/80'
-                  : 'bg-app-hover text-text-secondary cursor-not-allowed',
+                canSave ? 'bg-accent text-white hover:bg-accent/80' : 'bg-app-hover text-text-secondary cursor-not-allowed',
               )}
             >
               {saved ? t('apikey.saved') : t('apikey.save')}
             </button>
             <button
               onClick={handleTest}
-              disabled={!canSave || testing}
+              disabled={!canSave || keyStatus === 'loading'}
               className={cn(
                 'px-3 py-2 text-xs font-medium rounded border border-app-border transition-colors',
-                canSave && !testing
+                canSave && keyStatus !== 'loading'
                   ? 'hover:bg-app-hover text-text-primary'
                   : 'text-text-secondary cursor-not-allowed',
               )}
             >
-              {testing ? (
+              {keyStatus === 'loading' ? (
                 <span className="flex items-center gap-1.5">
                   <span className="inline-block w-3 h-3 border-2 border-app-border border-t-accent rounded-full animate-spin" />
                   {t('apiKey.testing')}
@@ -279,7 +280,7 @@ export function ApiKeyModal({ onClose }: Props) {
                 t('apikey.test')
               )}
             </button>
-            {apiKey && (
+            {storedApiKey && (
               <button
                 onClick={handleClear}
                 className="px-3 py-2 text-xs font-medium rounded border border-error/40 text-error hover:bg-error/10 transition-colors"
@@ -294,12 +295,7 @@ export function ApiKeyModal({ onClose }: Props) {
             {provider.docsUrl && (
               <p>
                 {t('apikey.getKey')}{' '}
-                <a
-                  href={provider.docsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-info underline hover:opacity-80"
-                >
+                <a href={provider.docsUrl} target="_blank" rel="noreferrer" className="text-info underline hover:opacity-80">
                   {provider.docsUrl}
                 </a>
               </p>
@@ -307,6 +303,60 @@ export function ApiKeyModal({ onClose }: Props) {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function ModelSelect({
+  models,
+  currentModel,
+  keyStatus,
+  onChange,
+  isEn,
+  keyValue,
+}: {
+  models: string[]
+  currentModel: string
+  keyStatus: KeyStatus
+  onChange: (m: string) => void
+  isEn: boolean
+  keyValue: string
+}) {
+  const hasModels = models.length > 0
+  const noKey = !keyValue.trim()
+  const loading = keyStatus === 'loading'
+
+  return (
+    <div>
+      <label className="block text-xs text-text-secondary mb-1 font-medium flex items-center gap-2">
+        {isEn ? 'Model' : 'Модель'}
+        {loading && <span className="inline-block w-3 h-3 border border-app-border border-t-accent rounded-full animate-spin" />}
+        {keyStatus === 'ok' && !loading && hasModels && <span className="text-[10px] text-success">● API</span>}
+        {keyStatus === 'ok' && !loading && !hasModels && <span className="text-[10px] text-warning">● fallback</span>}
+      </label>
+      <select
+        value={currentModel}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={noKey || loading}
+        className={cn('input-base text-xs', (noKey || loading) && 'opacity-50 cursor-not-allowed')}
+      >
+        {noKey && (
+          <option value="" disabled>
+            {isEn ? 'Enter API key to load models' : 'Введите ключ для загрузки моделей'}
+          </option>
+        )}
+        {loading && (
+          <option value="" disabled>
+            {isEn ? 'Loading models…' : 'Загрузка моделей…'}
+          </option>
+        )}
+        {hasModels &&
+          models.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+      </select>
     </div>
   )
 }

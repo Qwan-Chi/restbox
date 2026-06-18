@@ -59,6 +59,92 @@ export function hasApiKey(): boolean {
 export interface FetchModelsResult {
   models: string[]
   source: 'api' | 'fallback'
+  error?: string
+}
+
+const ANTHROPIC_FALLBACK = [
+  'claude-sonnet-4-20250514',
+  'claude-opus-4-20250514',
+  'claude-3-5-sonnet-latest',
+  'claude-3-5-haiku-latest',
+  'claude-3-opus-latest',
+]
+
+function getModelsUrl(providerId: string, baseUrl: string): string {
+  switch (providerId) {
+    case 'deepseek':
+      return 'https://api.deepseek.com/models'
+    case 'openai':
+      return 'https://api.openai.com/v1/models'
+    case 'anthropic':
+      return 'https://api.anthropic.com/v1/models'
+    case 'groq':
+      return 'https://api.groq.com/openai/v1/models'
+    case 'mistral':
+      return 'https://api.mistral.ai/v1/models'
+    case 'custom':
+      return `${baseUrl.replace(/\/$/, '')}/models`
+    default:
+      return `${baseUrl.replace(/\/$/, '')}/models`
+  }
+}
+
+function getModelsHeaders(providerId: string, apiKey: string): Record<string, string> {
+  if (providerId === 'anthropic') {
+    return {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    }
+  }
+  return { Authorization: `Bearer ${apiKey}` }
+}
+
+function parseModels(providerId: string, data: unknown): string[] {
+  const raw: unknown = (data as { data?: unknown })?.data ?? (data as { models?: unknown })?.models ?? data
+  if (!Array.isArray(raw)) return []
+
+  const extractId = (item: unknown): string | null => {
+    if (typeof item === 'string') return item
+    if (item && typeof item === 'object') {
+      const obj = item as Record<string, unknown>
+      if (typeof obj.id === 'string') return obj.id
+    }
+    return null
+  }
+
+  switch (providerId) {
+    case 'openai':
+      return raw
+        .map(extractId)
+        .filter((m): m is string => m !== null && m.startsWith('gpt-'))
+        .sort((a, b) => b.localeCompare(a))
+
+    case 'groq':
+      return raw
+        .filter((item): boolean => {
+          if (item && typeof item === 'object') {
+            const obj = item as Record<string, unknown>
+            return obj.active === true || obj.active === undefined
+          }
+          return true
+        })
+        .map(extractId)
+        .filter((m): m is string => m !== null)
+        .sort()
+
+    default:
+      return raw
+        .map(extractId)
+        .filter((m): m is string => m !== null && m.length > 0)
+        .sort()
+  }
+}
+
+function getFallbackModels(providerId: string, customModel?: string): string[] {
+  if (providerId === 'anthropic') return ANTHROPIC_FALLBACK
+  if (providerId === 'custom') return customModel ? [customModel] : []
+  return getProvider(providerId).models
 }
 
 export async function fetchModels(
@@ -67,44 +153,49 @@ export async function fetchModels(
   baseUrl: string,
   customModel?: string,
 ): Promise<FetchModelsResult> {
-  const provider = getProvider(providerId)
-  const fallback = provider.custom ? (customModel ? [customModel] : []) : provider.models
-
-  if (!apiKey.trim() || !baseUrl.trim()) {
-    return { models: fallback, source: 'fallback' }
+  if (!apiKey.trim()) {
+    return { models: [], source: 'fallback' }
   }
 
+  const url = getModelsUrl(providerId, baseUrl)
+  const headers = getModelsHeaders(providerId, apiKey)
+
   try {
-    const headers: Record<string, string> =
-      provider.apiFormat === 'anthropic'
-        ? {
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
-          }
-        : { Authorization: `Bearer ${apiKey}` }
+    const res = await fetch(url, { headers })
 
-    const res = await fetch(`${baseUrl}/models`, { headers })
+    if (res.status === 401) {
+      return { models: [], source: 'fallback', error: '401' }
+    }
 
-    if (!res.ok) return { models: fallback, source: 'fallback' }
+    if (res.status === 404 && providerId === 'anthropic') {
+      return { models: ANTHROPIC_FALLBACK, source: 'fallback' }
+    }
+
+    if (!res.ok) {
+      return {
+        models: getFallbackModels(providerId, customModel),
+        source: 'fallback',
+        error: `${res.status}`,
+      }
+    }
 
     const data = await res.json()
-    const rawModels: unknown = data?.data ?? data?.models ?? data
-    if (!Array.isArray(rawModels)) return { models: fallback, source: 'fallback' }
+    const models = parseModels(providerId, data)
 
-    const models = rawModels
-      .map((m: unknown) => {
-        if (typeof m === 'string') return m
-        if (m && typeof m === 'object' && 'id' in m) return String((m as { id: unknown }).id)
-        return null
-      })
-      .filter((m: string | null): m is string => m !== null && m.length > 0)
-      .sort()
+    if (models.length === 0) {
+      return {
+        models: getFallbackModels(providerId, customModel),
+        source: 'fallback',
+      }
+    }
 
-    if (models.length === 0) return { models: fallback, source: 'fallback' }
     return { models, source: 'api' }
-  } catch {
-    return { models: fallback, source: 'fallback' }
+  } catch (e) {
+    return {
+      models: getFallbackModels(providerId, customModel),
+      source: 'fallback',
+      error: e instanceof Error ? e.message : 'network',
+    }
   }
 }
 
