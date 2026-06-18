@@ -93,17 +93,16 @@ export function useRusty() {
     const rustyState = useRustyStore.getState()
     const session = rustyState.sessions.find((x) => x.id === rustyState.activeSessionId)
     if (!session) return
-    const respKey = `${state.response.timestamp}:${state.response.status}`
-    if (session.autoAnalyzedFor === respKey) return
-    renameSession(session.id, session.title)
+    const reqKey = `${state.current.method}:${state.current.url}`
+    if (session.autoAnalyzedFor === reqKey) return
     useRustyStore.setState((s) => ({
       sessions: s.sessions.map((sess) =>
-        sess.id === session.id ? { ...sess, autoAnalyzedFor: respKey } : sess,
+        sess.id === session.id ? { ...sess, autoAnalyzedFor: reqKey } : sess,
       ),
     }))
     touchTitle(`${state.current.method} ${state.current.url || 'запрос'}`)
     await stream(activeMessages())
-  }, [stream, renameSession, touchTitle])
+  }, [stream, touchTitle])
 
   const stop = useCallback(() => {
     abortRef.current?.abort()

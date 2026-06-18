@@ -18,10 +18,6 @@ function newSession(): ChatSession {
   }
 }
 
-function emptySessions(): ChatSession[] {
-  return [newSession()]
-}
-
 interface RustyStore {
   sessions: ChatSession[]
   activeSessionId: string
@@ -51,11 +47,13 @@ function patchActive(s: RustyStore, fn: (session: ChatSession) => ChatSession): 
   }
 }
 
+const initialSession = newSession()
+
 export const useRustyStore = create<RustyStore>()(
   persist(
     (set) => ({
-      sessions: emptySessions(),
-      activeSessionId: emptySessions()[0].id,
+      sessions: [initialSession],
+      activeSessionId: initialSession.id,
       status: 'idle',
       lastAnomalies: [],
 

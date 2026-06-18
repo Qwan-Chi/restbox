@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useRusty } from '@/hooks/useRusty'
-import { DEFAULT_TITLE } from '@/store/useRustyStore'
+import { useRustyStore, DEFAULT_TITLE } from '@/store/useRustyStore'
 import { useT } from '@/utils/i18n'
 import { useI18nStore } from '@/store/useI18nStore'
 import { cn } from '@/utils/cn'
@@ -24,6 +25,9 @@ export function RustyChatList({ onClose }: Props) {
   const t = useT()
   const lang = useI18nStore((s) => s.lang)
   const { sessions, activeSessionId, newChat, switchChat, deleteSession } = useRusty()
+  const renameSession = useRustyStore((s) => s.renameSession)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
 
   const sorted = [...sessions].sort((a, b) => b.updatedAt - a.updatedAt)
 
@@ -33,8 +37,23 @@ export function RustyChatList({ onClose }: Props) {
   }
 
   const handleSwitch = (id: string) => {
+    if (editingId) return
     switchChat(id)
     onClose()
+  }
+
+  const handleStartRename = (id: string, title: string) => {
+    setEditingId(id)
+    setEditValue(title === DEFAULT_TITLE ? '' : title)
+  }
+
+  const handleConfirmRename = () => {
+    if (editingId) {
+      const name = editValue.trim() || DEFAULT_TITLE
+      renameSession(editingId, name)
+    }
+    setEditingId(null)
+    setEditValue('')
   }
 
   return (
@@ -54,46 +73,87 @@ export function RustyChatList({ onClose }: Props) {
         {sorted.map((s) => {
           const isActive = s.id === activeSessionId
           const isEmpty = s.messages.length === 0
+          const isEditing = editingId === s.id
+
           return (
             <div
               key={s.id}
               onClick={() => handleSwitch(s.id)}
+              onDoubleClick={(e) => {
+                e.stopPropagation()
+                handleStartRename(s.id, s.title)
+              }}
               className={cn(
                 'group flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors mb-0.5',
                 isActive ? 'bg-accent/15 border border-accent/30' : 'hover:bg-app-hover border border-transparent',
               )}
             >
-              <span className={cn('text-xs', isActive ? 'text-accent' : 'text-text-secondary')}>
+              <span className={cn('text-xs shrink-0', isActive ? 'text-accent' : 'text-text-secondary')}>
                 {isEmpty ? '💬' : '🔩'}
               </span>
-              <div className="flex-1 min-w-0">
-                <div
-                  className={cn(
-                    'text-xs truncate',
-                    isActive ? 'text-text-primary font-medium' : 'text-text-primary',
-                    s.title === DEFAULT_TITLE && 'text-text-secondary italic',
-                  )}
-                >
-                  {s.title}
+
+              {isEditing ? (
+                <input
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleConfirmRename()
+                    if (e.key === 'Escape') { setEditingId(null); setEditValue('') }
+                  }}
+                  onBlur={handleConfirmRename}
+                  autoFocus
+                  placeholder={DEFAULT_TITLE}
+                  className="flex-1 min-w-0 bg-app-input border border-accent rounded px-1.5 py-0.5 text-xs text-text-primary focus:outline-none"
+                />
+              ) : (
+                <div className="flex-1 min-w-0">
+                  <div
+                    className={cn(
+                      'text-xs truncate',
+                      isActive ? 'text-text-primary font-medium' : 'text-text-primary',
+                      s.title === DEFAULT_TITLE && 'text-text-secondary italic',
+                    )}
+                  >
+                    {s.title}
+                  </div>
+                  <div className="text-[10px] text-text-secondary flex gap-2">
+                    <span>{relativeTime(s.updatedAt, t, lang)}</span>
+                    {!isEmpty && <span>· {s.messages.length} {t('chatList.messages')}</span>}
+                  </div>
                 </div>
-                <div className="text-[10px] text-text-secondary flex gap-2">
-                  <span>{relativeTime(s.updatedAt, t, lang)}</span>
-                  {!isEmpty && <span>· {s.messages.length} {t('chatList.messages')}</span>}
+              )}
+
+              {!isEditing && (
+                <div className="flex items-center shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleStartRename(s.id, s.title)
+                    }}
+                    className="opacity-0 group-hover:opacity-100 btn-icon h-5 w-5 text-[10px]"
+                    title="Переименовать"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteSession(s.id)
+                    }}
+                    className="opacity-0 group-hover:opacity-100 btn-icon h-5 w-5 text-[10px]"
+                    title={t('chatList.delete')}
+                  >
+                    ✕
+                  </button>
                 </div>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  deleteSession(s.id)
-                }}
-                className="opacity-0 group-hover:opacity-100 btn-icon h-5 w-5 text-[10px] shrink-0"
-                title={t('chatList.delete')}
-              >
-                ✕
-              </button>
+              )}
             </div>
           )
         })}
+      </div>
+      <div className="px-3 py-1.5 text-[10px] text-text-secondary/60 border-t border-app-border/50">
+        Двойной клик — переименовать
       </div>
     </div>
   )
