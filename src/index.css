@@ -2,6 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
+:root,
+.dark {
+  --app-bg: #0F1117;
+  --app-panel: #1A1D27;
+  --app-border: #2A2D3A;
+  --app-hover: #232634;
+  --app-input: #15171F;
+  --text-primary: #E8EAF0;
+  --text-secondary: #6B7280;
+  --accent: #E07B39;
+  --success: #22C55E;
+  --error: #EF4444;
+  --warning: #F59E0B;
+  --info: #3B82F6;
+  --scrollbar-thumb: #2A2D3A;
+  --scrollbar-hover: #3A3D4A;
+  --code-bg: #0F1117;
+  --hljs-text: #E8EAF0;
+  --hljs-comment: #6B7280;
+}
+
+.light {
+  --app-bg: #F8F9FB;
+  --app-panel: #FFFFFF;
+  --app-border: #E2E5EC;
+  --app-hover: #F0F2F6;
+  --app-input: #F4F5F8;
+  --text-primary: #1A1D27;
+  --text-secondary: #6B7280;
+  --accent: #D2691E;
+  --success: #16A34A;
+  --error: #DC2626;
+  --warning: #D97706;
+  --info: #2563EB;
+  --scrollbar-thumb: #D1D5DB;
+  --scrollbar-hover: #9CA3AF;
+  --code-bg: #F4F5F8;
+  --hljs-text: #1A1D27;
+  --hljs-comment: #9CA3AF;
+}
+
 @layer base {
   html,
   body,
@@ -11,7 +52,6 @@
 
   body {
     @apply bg-app-bg text-text-primary font-sans antialiased;
-    min-width: 1280px;
   }
 
   * {
@@ -22,7 +62,7 @@
 @layer components {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #2A2D3A transparent;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
   .scrollbar-thin::-webkit-scrollbar {
     width: 8px;
@@ -32,11 +72,11 @@
     background: transparent;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #2A2D3A;
+    background-color: var(--scrollbar-thumb);
     border-radius: 4px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: #3A3D4A;
+    background-color: var(--scrollbar-hover);
   }
 
   .input-base {
@@ -91,13 +131,16 @@
   @apply border-l-2 border-app-border pl-3 text-text-secondary italic my-2;
 }
 .rusty-markdown code {
-  @apply font-mono text-[12px] bg-app-bg px-1.5 py-0.5 rounded;
+  @apply font-mono text-[12px] px-1.5 py-0.5 rounded;
+  background: var(--code-bg);
 }
 .rusty-markdown pre {
-  @apply bg-app-bg border border-app-border rounded-md p-3 my-2 overflow-x-auto;
+  @apply border border-app-border rounded-md p-3 my-2 overflow-x-auto;
+  background: var(--code-bg);
 }
 .rusty-markdown pre code {
-  @apply bg-transparent p-0;
+  background: transparent;
+  padding: 0;
 }
 .rusty-markdown table {
   @apply w-full border-collapse my-2 text-xs;
@@ -110,52 +153,97 @@
   @apply bg-app-hover;
 }
 
-/* highlight.js dark theme (subset) */
+/* highlight.js theme (variable-driven) */
 .hljs {
-  color: #E8EAF0;
+  color: var(--hljs-text);
   background: transparent;
 }
 .hljs-comment,
 .hljs-quote {
-  color: #6B7280;
+  color: var(--hljs-comment);
   font-style: italic;
 }
 .hljs-keyword,
 .hljs-selector-tag,
 .hljs-built_in,
 .hljs-type {
-  color: #E07B39;
+  color: var(--accent);
 }
 .hljs-string,
 .hljs-attr,
 .hljs-template-tag,
 .hljs-template-variable {
-  color: #22C55E;
+  color: var(--success);
 }
 .hljs-number,
 .hljs-literal,
 .hljs-variable,
 .hljs-constant {
-  color: #3B82F6;
+  color: var(--info);
 }
 .hljs-title,
 .hljs-section,
 .hljs-function .hljs-title {
-  color: #F59E0B;
+  color: var(--warning);
 }
 .hljs-tag,
 .hljs-name {
-  color: #3B82F6;
+  color: var(--info);
 }
 .hljs-attribute {
-  color: #E07B39;
+  color: var(--accent);
 }
 .hljs-meta {
-  color: #6B7280;
+  color: var(--hljs-comment);
 }
 .hljs-deletion {
-  color: #EF4444;
+  color: var(--error);
 }
 .hljs-addition {
-  color: #22C55E;
+  color: var(--success);
+}
+
+/* CodeMirror theme integration */
+.cm-editor {
+  height: 100%;
+  background: transparent;
+}
+.cm-editor .cm-scroller {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+}
+.cm-editor.cm-focused {
+  outline: none;
+}
+.cm-gutters {
+  background: transparent !important;
+  border-right: 1px solid var(--app-border) !important;
+  color: var(--text-secondary) !important;
+}
+.cm-activeLine {
+  background: var(--app-hover) !important;
+}
+.cm-activeLineGutter {
+  background: var(--app-hover) !important;
+}
+.cm-content {
+  color: var(--text-primary) !important;
+}
+.cm-selectionBackground {
+  background: var(--accent) !important;
+  opacity: 0.3;
+}
+.cm-cursor {
+  border-left-color: var(--accent) !important;
+}
+.cm-tooltip {
+  background: var(--app-panel) !important;
+  border: 1px solid var(--app-border) !important;
+  color: var(--text-primary) !important;
+}
+.cm-tooltip-autocomplete ul li[aria-selected] {
+  background: var(--app-hover) !important;
+}
+.lint-error {
+  text-decoration: underline wavy var(--error);
 }

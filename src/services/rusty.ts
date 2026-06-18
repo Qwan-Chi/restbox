@@ -3,6 +3,7 @@ import { formatBytes, formatDuration } from '@/utils/formatJson'
 import { useI18nStore } from '@/store/useI18nStore'
 import { getActiveConfig } from '@/store/useApiKeyStore'
 import type { ActiveConfig } from '@/store/useApiKeyStore'
+import { getProvider } from '@/services/providers'
 
 const SYSTEM_PROMPT_RU = `Ты — Rusty, AI-ассистент встроенный в REST-клиент Restbox.
 Твоя работа: помогать разработчикам понимать ответы API.
@@ -53,6 +54,58 @@ export function getApiKey(): string {
 
 export function hasApiKey(): boolean {
   return getActiveConfig().ready
+}
+
+export interface FetchModelsResult {
+  models: string[]
+  source: 'api' | 'fallback'
+}
+
+export async function fetchModels(
+  providerId: string,
+  apiKey: string,
+  baseUrl: string,
+  customModel?: string,
+): Promise<FetchModelsResult> {
+  const provider = getProvider(providerId)
+  const fallback = provider.custom ? (customModel ? [customModel] : []) : provider.models
+
+  if (!apiKey.trim() || !baseUrl.trim()) {
+    return { models: fallback, source: 'fallback' }
+  }
+
+  try {
+    const headers: Record<string, string> =
+      provider.apiFormat === 'anthropic'
+        ? {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          }
+        : { Authorization: `Bearer ${apiKey}` }
+
+    const res = await fetch(`${baseUrl}/models`, { headers })
+
+    if (!res.ok) return { models: fallback, source: 'fallback' }
+
+    const data = await res.json()
+    const rawModels: unknown = data?.data ?? data?.models ?? data
+    if (!Array.isArray(rawModels)) return { models: fallback, source: 'fallback' }
+
+    const models = rawModels
+      .map((m: unknown) => {
+        if (typeof m === 'string') return m
+        if (m && typeof m === 'object' && 'id' in m) return String((m as { id: unknown }).id)
+        return null
+      })
+      .filter((m: string | null): m is string => m !== null && m.length > 0)
+      .sort()
+
+    if (models.length === 0) return { models: fallback, source: 'fallback' }
+    return { models, source: 'api' }
+  } catch {
+    return { models: fallback, source: 'fallback' }
+  }
 }
 
 export function buildContextMessage(context: RustyContext): string {

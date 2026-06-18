@@ -12,6 +12,8 @@ export function UrlInput() {
   const setUrl = useRequestStore((s) => s.setUrl)
   const setName = useRequestStore((s) => s.setName)
   const current = useRequestStore((s) => s.current)
+  const loadedCollectionId = useRequestStore((s) => s.loadedCollectionId)
+  const loadedRequestId = useRequestStore((s) => s.loadedRequestId)
   const collections = useCollectionStore((s) => s.collections)
   const activeCollectionId = useCollectionStore((s) => s.activeCollectionId)
   const createCollection = useCollectionStore((s) => s.createCollection)
@@ -21,6 +23,7 @@ export function UrlInput() {
   const [saveName, setSaveName] = useState(name)
   const [saveCollectionId, setSaveCollectionId] = useState<string>(activeCollectionId ?? '')
   const [newCollectionName, setNewCollectionName] = useState('')
+  const [savedFlash, setSavedFlash] = useState(false)
 
   const onSave = () => {
     setSaveName(name || url || 'Untitled')
@@ -40,6 +43,16 @@ export function UrlInput() {
     setNewCollectionName('')
   }
 
+  const saveChanges = () => {
+    if (!loadedCollectionId || !loadedRequestId) return
+    const req = { ...JSON.parse(JSON.stringify(current)), id: loadedRequestId }
+    addRequest(loadedCollectionId, req)
+    setSavedFlash(true)
+    setTimeout(() => setSavedFlash(false), 1500)
+  }
+
+  const hasLoadedRequest = loadedCollectionId !== null && loadedRequestId !== null
+
   return (
     <div className="flex-1 flex items-stretch">
       <input
@@ -58,6 +71,20 @@ export function UrlInput() {
       >
         🔖
       </button>
+      {hasLoadedRequest && (
+        <button
+          onClick={saveChanges}
+          className={cn(
+            'px-3 border border-app-border text-xs font-medium transition-colors whitespace-nowrap',
+            savedFlash
+              ? 'bg-success/20 text-success'
+              : 'bg-app-hover text-text-primary hover:bg-accent hover:text-white',
+          )}
+          title="Перезаписать текущий запрос в коллекции"
+        >
+          {savedFlash ? '✓' : '💾'}
+        </button>
+      )}
 
       {saving && (
         <div

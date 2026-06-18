@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useApiKeyStore } from '@/store/useApiKeyStore'
 import { PROVIDERS, getProvider } from '@/services/providers'
-import { checkApiKey } from '@/services/rusty'
+import { checkApiKey, fetchModels } from '@/services/rusty'
 import { useT } from '@/utils/i18n'
 import { useI18nStore } from '@/store/useI18nStore'
 import { cn } from '@/utils/cn'
@@ -32,11 +32,37 @@ export function ApiKeyModal({ onClose }: Props) {
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
   const [saved, setSaved] = useState(false)
+  const [dynamicModels, setDynamicModels] = useState<string[]>([])
+  const [modelsLoading, setModelsLoading] = useState(false)
+  const [modelsSource, setModelsSource] = useState<'api' | 'fallback' | null>(null)
 
   useEffect(() => {
     setTestResult(null)
     setSaved(false)
   }, [keyValue, providerId, model, customModel, customBaseUrl])
+
+  useEffect(() => {
+    if (provider.custom || !keyValue.trim()) {
+      setDynamicModels([])
+      setModelsSource(null)
+      return
+    }
+    let cancelled = false
+    setModelsLoading(true)
+    void fetchModels(providerId, keyValue, provider.baseUrl).then((result) => {
+      if (cancelled) return
+      setDynamicModels(result.models)
+      setModelsSource(result.source)
+      setModelsLoading(false)
+      if (result.source === 'api' && result.models.length > 0 && !result.models.includes(currentModel)) {
+        setModel(result.models[0])
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [providerId, keyValue])
 
   const currentModel = provider.custom ? customModel : model || provider.defaultModel
   const baseUrl = provider.custom ? customBaseUrl : provider.baseUrl
@@ -142,19 +168,35 @@ export function ApiKeyModal({ onClose }: Props) {
 
           {!provider.custom && (
             <div>
-              <label className="block text-xs text-text-secondary mb-1 font-medium">
+              <label className="block text-xs text-text-secondary mb-1 font-medium flex items-center gap-2">
                 {isEn ? 'Model' : 'Модель'}
+                {modelsLoading && (
+                  <span className="inline-block w-3 h-3 border border-app-border border-t-accent rounded-full animate-spin" />
+                )}
+                {modelsSource === 'api' && !modelsLoading && (
+                  <span className="text-[10px] text-success">● API</span>
+                )}
+                {modelsSource === 'fallback' && !modelsLoading && keyValue.trim() && (
+                  <span className="text-[10px] text-warning" title="Не удалось загрузить список моделей">
+                    ● fallback
+                  </span>
+                )}
               </label>
               <select
                 value={currentModel}
                 onChange={(e) => setModel(e.target.value)}
                 className="input-base text-xs"
               >
-                {provider.models.map((m) => (
+                {(dynamicModels.length > 0 ? dynamicModels : provider.models).map((m) => (
                   <option key={m} value={m}>
                     {m}
                   </option>
                 ))}
+                {dynamicModels.length === 0 && modelsSource === null && keyValue.trim() && (
+                  <option value={currentModel} disabled>
+                    {isEn ? 'Loading models…' : 'Загрузка моделей…'}
+                  </option>
+                )}
               </select>
             </div>
           )}

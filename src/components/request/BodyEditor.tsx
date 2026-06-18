@@ -1,7 +1,8 @@
 import { useRequestStore, emptyKv } from '@/store/useRequestStore'
 import type { BodyType } from '@/types'
 import { KeyValueEditor } from './KeyValueEditor'
-import { isValidJson } from '@/utils/formatJson'
+import { JsonCodeEditor } from './JsonCodeEditor'
+import { isValidJson, formatJson } from '@/utils/formatJson'
 import { useT } from '@/utils/i18n'
 import { cn } from '@/utils/cn'
 
@@ -18,9 +19,15 @@ export function BodyEditor() {
   const body = useRequestStore((s) => s.current.body)
   const setBody = useRequestStore((s) => s.setBody)
 
+  const handleFormat = () => {
+    if (body.type === 'json' && isValidJson(body.content)) {
+      setBody({ ...body, content: formatJson(JSON.parse(body.content)) })
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex gap-1">
+    <div className="flex flex-col gap-3 h-full">
+      <div className="flex gap-1 items-center">
         {TYPES.map((tp) => (
           <button
             key={tp.value}
@@ -35,26 +42,53 @@ export function BodyEditor() {
             {tp.label}
           </button>
         ))}
+        {body.type === 'json' && (
+          <button
+            onClick={handleFormat}
+            disabled={!isValidJson(body.content)}
+            className={cn(
+              'ml-auto px-2 py-1 text-[11px] rounded border transition-colors',
+              isValidJson(body.content)
+                ? 'border-app-border text-text-secondary hover:text-text-primary hover:bg-app-hover'
+                : 'border-app-border text-text-secondary/40 cursor-not-allowed',
+            )}
+            title="Ctrl+Shift+F"
+          >
+            Format
+          </button>
+        )}
       </div>
 
       {body.type === 'none' && (
         <p className="text-xs text-text-secondary italic">{t('body.none')}</p>
       )}
 
-      {(body.type === 'json' || body.type === 'raw' || body.type === 'binary') && (
-        <div className="flex flex-col gap-1.5">
-          <textarea
-            value={body.content}
-            onChange={(e) => setBody({ ...body, content: e.target.value })}
-            placeholder={body.type === 'json' ? t('body.jsonPlaceholder') : t('body.rawPlaceholder')}
-            rows={12}
-            className="input-base font-mono text-xs resize-y scrollbar-thin"
-          />
-          {body.type === 'json' && body.content.trim() !== '' && (
+      {body.type === 'json' && (
+        <div className="flex flex-col gap-1.5 flex-1 min-h-0">
+          <div className="flex-1 min-h-[200px] border border-app-border rounded overflow-hidden bg-app-input">
+            <JsonCodeEditor
+              value={body.content}
+              onChange={(content) => setBody({ ...body, content })}
+              placeholder={t('body.jsonPlaceholder')}
+            />
+          </div>
+          {body.content.trim() !== '' && (
             <span className={cn('text-[11px]', isValidJson(body.content) ? 'text-success' : 'text-error')}>
               {isValidJson(body.content) ? t('body.validJson') : t('body.invalidJson')}
             </span>
           )}
+        </div>
+      )}
+
+      {(body.type === 'raw' || body.type === 'binary') && (
+        <div className="flex flex-col gap-1.5">
+          <textarea
+            value={body.content}
+            onChange={(e) => setBody({ ...body, content: e.target.value })}
+            placeholder={t('body.rawPlaceholder')}
+            rows={12}
+            className="input-base font-mono text-xs resize-y scrollbar-thin"
+          />
         </div>
       )}
 

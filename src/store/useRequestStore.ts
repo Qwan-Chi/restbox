@@ -34,6 +34,8 @@ interface RequestStore {
   response: ResponseData | null
   isLoading: boolean
   error: string | null
+  loadedCollectionId: string | null
+  loadedRequestId: string | null
 
   setMethod: (method: HttpMethod) => void
   setUrl: (url: string) => void
@@ -45,7 +47,7 @@ interface RequestStore {
   setResponse: (response: ResponseData | null) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
-  loadRequest: (request: RequestConfig) => void
+  loadRequest: (request: RequestConfig, collectionId?: string) => void
   reset: () => void
 }
 
@@ -54,6 +56,8 @@ export const useRequestStore = create<RequestStore>((set) => ({
   response: null,
   isLoading: false,
   error: null,
+  loadedCollectionId: null,
+  loadedRequestId: null,
 
   setMethod: (method) => set((s) => ({ current: { ...s.current, method } })),
   setUrl: (url) => set((s) => ({ current: { ...s.current, url } })),
@@ -65,9 +69,23 @@ export const useRequestStore = create<RequestStore>((set) => ({
   setResponse: (response) => set({ response }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
-  loadRequest: (request) =>
-    set({ current: JSON.parse(JSON.stringify(request)), response: null, error: null }),
-  reset: () => set({ current: createDefaultRequest(), response: null, error: null, isLoading: false }),
+  loadRequest: (request, collectionId) =>
+    set({
+      current: JSON.parse(JSON.stringify(request)),
+      response: null,
+      error: null,
+      loadedCollectionId: collectionId ?? null,
+      loadedRequestId: collectionId ? request.id : null,
+    }),
+  reset: () =>
+    set({
+      current: createDefaultRequest(),
+      response: null,
+      error: null,
+      isLoading: false,
+      loadedCollectionId: null,
+      loadedRequestId: null,
+    }),
 }))
 
 export { emptyKv }

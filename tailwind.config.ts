@@ -6,21 +6,21 @@ const config: Config = {
     extend: {
       colors: {
         app: {
-          bg: '#0F1117',
-          panel: '#1A1D27',
-          border: '#2A2D3A',
-          hover: '#232634',
-          input: '#15171F',
+          bg: 'var(--app-bg)',
+          panel: 'var(--app-panel)',
+          border: 'var(--app-border)',
+          hover: 'var(--app-hover)',
+          input: 'var(--app-input)',
         },
         text: {
-          primary: '#E8EAF0',
-          secondary: '#6B7280',
+          primary: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
         },
-        accent: '#E07B39',
-        success: '#22C55E',
-        error: '#EF4444',
-        warning: '#F59E0B',
-        info: '#3B82F6',
+        accent: 'var(--accent)',
+        success: 'var(--success)',
+        error: 'var(--error)',
+        warning: 'var(--warning)',
+        info: 'var(--info)',
         method: {
           get: '#3B82F6',
           post: '#22C55E',
@@ -38,9 +38,6 @@ const config: Config = {
       width: {
         sidebar: '240px',
         rusty: '360px',
-      },
-      minWidth: {
-        app: '1280px',
       },
     },
   },

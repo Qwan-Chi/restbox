@@ -3,7 +3,9 @@ import { useHistoryStore } from '@/store/useHistoryStore'
 import { useCollectionStore } from '@/store/useCollectionStore'
 import { useRequestStore } from '@/store/useRequestStore'
 import { useRustyStore } from '@/store/useRustyStore'
+import { useLayoutStore } from '@/store/useLayoutStore'
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
+import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { useT } from '@/utils/i18n'
 import { cn } from '@/utils/cn'
 import { formatBytes, formatDuration } from '@/utils/formatJson'
@@ -21,6 +23,7 @@ const METHOD_COLOR: Record<HttpMethod, string> = {
 
 export function Sidebar() {
   const t = useT()
+  const toggleSidebar = useLayoutStore((s) => s.toggleSidebar)
   const [tab, setTab] = useState<'history' | 'collections'>('history')
   const history = useHistoryStore((s) => s.items)
   const clearHistory = useHistoryStore((s) => s.clear)
@@ -64,6 +67,14 @@ export function Sidebar() {
           ))}
         </div>
         <LanguageSwitcher />
+        <ThemeToggle />
+        <button
+          onClick={toggleSidebar}
+          className="btn-icon h-7 w-7 border border-app-border"
+          title="Свернуть"
+        >
+          ◀
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-thin">
@@ -140,7 +151,7 @@ export function Sidebar() {
                   <div
                     key={r.id}
                     className="group/req flex items-center gap-2 pl-6 pr-3 py-1.5 hover:bg-app-hover cursor-pointer"
-                    onClick={() => loadRequest(r)}
+                    onClick={() => loadRequest(r, c.id)}
                   >
                     <span className={cn('text-[10px] font-bold uppercase w-10 shrink-0', METHOD_COLOR[r.method])}>
                       {r.method}

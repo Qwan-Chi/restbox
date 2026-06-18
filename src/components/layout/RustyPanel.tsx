@@ -18,8 +18,8 @@ export function RustyPanel() {
   const t = useT()
   const { status, autoAnalyze, clearActive, newChat, activeSession, messages } = useRusty()
   const response = useRequestStore((s) => s.response)
-  const rustyWidth = useLayoutStore((s) => s.rustyWidth)
   const providerId = useApiKeyStore((s) => s.providerId)
+  const toggleRusty = useLayoutStore((s) => s.toggleRusty)
   const [showList, setShowList] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const lastRespKey = useRef<string | null>(null)
@@ -51,8 +51,7 @@ export function RustyPanel() {
 
   return (
     <aside
-      className="shrink-0 flex flex-col bg-app-panel border-l border-app-border"
-      style={{ width: rustyWidth }}
+      className="h-full flex flex-col bg-app-panel border-l border-app-border"
     >
       <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-app-border">
         <RustyAvatar status={statusKey} size={32} />
@@ -72,6 +71,13 @@ export function RustyPanel() {
             )}
           </div>
         </div>
+        <button
+          onClick={toggleRusty}
+          className="btn-icon h-7 w-7 border border-app-border"
+          title="Свернуть"
+        >
+          ▶
+        </button>
         <button
           onClick={() => setShowSettings(true)}
           className={cn(
