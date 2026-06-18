@@ -6,6 +6,7 @@ import { useRustyStore } from '@/store/useRustyStore'
 import { useLayoutStore } from '@/store/useLayoutStore'
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
+import { UserMenu } from '@/components/auth/UserMenu'
 import { useT } from '@/utils/i18n'
 import { cn } from '@/utils/cn'
 import { formatBytes, formatDuration } from '@/utils/formatJson'
@@ -224,6 +225,8 @@ export function Sidebar() {
           {t('sidebar.clearHistory')}
         </button>
       )}
+
+      <UserMenu />
     </aside>
   )
 }

@@ -113,3 +113,16 @@ export interface RustyContext {
 
 export type RequestTab = 'headers' | 'body' | 'params' | 'auth'
 export type ResponseTab = 'body' | 'headers' | 'timeline'
+
+export type AuthProvider = 'google' | 'yandex'
+
+export interface AuthUser {
+  id: string
+  provider: AuthProvider
+  name: string
+  email: string | null
+  avatar: string | null
+  token: string
+  expiresAt: number | null
+  loginAt: number
+}

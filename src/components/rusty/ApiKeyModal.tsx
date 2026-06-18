@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useApiKeyStore } from '@/store/useApiKeyStore'
 import { PROVIDERS, getProvider } from '@/services/providers'
 import { checkApiKey, fetchModels } from '@/services/rusty'
@@ -27,6 +27,9 @@ export function ApiKeyModal({ onClose }: Props) {
   const clear = useApiKeyStore((s) => s.clear)
 
   const provider = getProvider(providerId)
+  const currentModel = provider.custom ? customModel : model || provider.defaultModel
+  const baseUrl = provider.custom ? customBaseUrl : provider.baseUrl
+
   const [keyValue, setKeyValue] = useState(apiKey)
   const [showKey, setShowKey] = useState(false)
   const [testing, setTesting] = useState(false)
@@ -35,6 +38,8 @@ export function ApiKeyModal({ onClose }: Props) {
   const [dynamicModels, setDynamicModels] = useState<string[]>([])
   const [modelsLoading, setModelsLoading] = useState(false)
   const [modelsSource, setModelsSource] = useState<'api' | 'fallback' | null>(null)
+  const currentModelRef = useRef(currentModel)
+  currentModelRef.current = currentModel
 
   useEffect(() => {
     setTestResult(null)
@@ -54,7 +59,7 @@ export function ApiKeyModal({ onClose }: Props) {
       setDynamicModels(result.models)
       setModelsSource(result.source)
       setModelsLoading(false)
-      if (result.source === 'api' && result.models.length > 0 && !result.models.includes(currentModel)) {
+      if (result.source === 'api' && result.models.length > 0 && !result.models.includes(currentModelRef.current)) {
         setModel(result.models[0])
       }
     })
@@ -63,9 +68,6 @@ export function ApiKeyModal({ onClose }: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [providerId, keyValue])
-
-  const currentModel = provider.custom ? customModel : model || provider.defaultModel
-  const baseUrl = provider.custom ? customBaseUrl : provider.baseUrl
 
   const handleSave = () => {
     setApiKey(keyValue)
@@ -195,6 +197,11 @@ export function ApiKeyModal({ onClose }: Props) {
                 {dynamicModels.length === 0 && modelsSource === null && keyValue.trim() && (
                   <option value={currentModel} disabled>
                     {isEn ? 'Loading models…' : 'Загрузка моделей…'}
+                  </option>
+                )}
+                {dynamicModels.length === 0 && !keyValue.trim() && (
+                  <option value={currentModel} disabled>
+                    {isEn ? 'Enter API key to load models' : 'Введите ключ для загрузки моделей'}
                   </option>
                 )}
               </select>
