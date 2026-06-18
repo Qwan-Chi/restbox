@@ -29,10 +29,6 @@ export default function App() {
     applyTheme(theme)
   }, [theme])
 
-  if (!user) {
-    return <LoginScreen />
-  }
-
   const onSidebarResize = useCallback(
     (delta: number) => {
       const next = Math.max(LIMITS.sidebar.min, Math.min(LIMITS.sidebar.max, sidebarWidth + delta))
@@ -48,6 +44,10 @@ export default function App() {
     },
     [rustyWidth, setRustyWidth],
   )
+
+  if (!user) {
+    return <LoginScreen />
+  }
 
   if (isMobile) {
     return (
