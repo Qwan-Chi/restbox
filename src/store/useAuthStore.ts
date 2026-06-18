@@ -1,7 +1,12 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import type { AuthUser } from '@/types'
 import { storage } from '@/utils/storage'
+
+const AUTH_KEY = 'auth'
+
+function loadUser(): AuthUser | null {
+  return storage.get<AuthUser>(AUTH_KEY)
+}
 
 interface AuthStore {
   user: AuthUser | null
@@ -9,23 +14,14 @@ interface AuthStore {
   logout: () => void
 }
 
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set) => ({
-      user: null,
-      login: (user) => set({ user }),
-      logout: () => set({ user: null }),
-    }),
-    {
-      name: 'restbox:auth',
-      storage: {
-        getItem: (name) => {
-          const raw = storage.get(name.replace('restbox:', ''))
-          return raw ? { state: raw, version: 0 } : null
-        },
-        setItem: (name, value) => storage.set(name.replace('restbox:', ''), (value as { state: unknown }).state),
-        removeItem: (name) => storage.remove(name.replace('restbox:', '')),
-      },
-    },
-  ),
-)
+export const useAuthStore = create<AuthStore>((set) => ({
+  user: loadUser(),
+  login: (user) => {
+    storage.set(AUTH_KEY, user)
+    set({ user })
+  },
+  logout: () => {
+    storage.remove(AUTH_KEY)
+    set({ user: null })
+  },
+}))

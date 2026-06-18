@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MainPanel } from '@/components/layout/MainPanel'
 import { RustyPanel } from '@/components/layout/RustyPanel'
@@ -8,7 +8,6 @@ import { useLayoutStore, LIMITS } from '@/store/useLayoutStore'
 import { useThemeStore, applyTheme } from '@/store/useThemeStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useIsMobile } from '@/hooks/useMediaQuery'
-import { parseYandexRedirect, fetchYandexProfile, clearYandexRedirect, isYandexConfigured } from '@/services/yandexAuth'
 import { cn } from '@/utils/cn'
 
 export default function App() {
@@ -25,34 +24,10 @@ export default function App() {
   const theme = useThemeStore((s) => s.theme)
   const isMobile = useIsMobile()
   const user = useAuthStore((s) => s.user)
-  const login = useAuthStore((s) => s.login)
-  const [yandexPending, setYandexPending] = useState(false)
 
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
-
-  useEffect(() => {
-    if (!isYandexConfigured()) return
-    const result = parseYandexRedirect()
-    if (!result) return
-    setYandexPending(true)
-    clearYandexRedirect()
-    void fetchYandexProfile(result.token)
-      .then((yUser) => login({ ...yUser, expiresAt: result.expiresAt }))
-      .catch(() => setYandexPending(false))
-  }, [login])
-
-  if (yandexPending) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-app-bg">
-        <div className="flex flex-col items-center gap-3">
-          <span className="inline-block w-8 h-8 border-2 border-app-border border-t-accent rounded-full animate-spin" />
-          <p className="text-sm text-text-secondary">Вход через Яндекс…</p>
-        </div>
-      </div>
-    )
-  }
 
   if (!user) {
     return <LoginScreen />
