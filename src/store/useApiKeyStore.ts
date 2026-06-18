@@ -1,6 +1,28 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import { getProvider } from '@/services/providers'
+import { storage } from '@/utils/storage'
+
+const CONFIG_KEY = 'api-config'
+
+interface StoredConfig {
+  providerId: string
+  apiKey: string
+  model: string
+  customBaseUrl: string
+  customModel: string
+}
+
+function loadConfig(): StoredConfig {
+  return (
+    storage.get<StoredConfig>(CONFIG_KEY) ?? {
+      providerId: 'deepseek',
+      apiKey: '',
+      model: '',
+      customBaseUrl: '',
+      customModel: '',
+    }
+  )
+}
 
 interface ApiKeyStore {
   providerId: string
@@ -17,32 +39,55 @@ interface ApiKeyStore {
   clear: () => void
 }
 
-export const useApiKeyStore = create<ApiKeyStore>()(
-  persist(
-    (set, get) => ({
-      providerId: 'deepseek',
-      apiKey: '',
-      model: '',
-      customBaseUrl: '',
-      customModel: '',
+const initial = loadConfig()
 
-      setProvider: (providerId) => {
-        const p = getProvider(providerId)
-        set({
-          providerId,
-          model: p.custom ? get().customModel || '' : p.defaultModel,
-          apiKey: '',
-        })
-      },
-      setApiKey: (apiKey) => set({ apiKey: apiKey.trim() }),
-      setModel: (model) => set({ model }),
-      setCustomBaseUrl: (customBaseUrl) => set({ customBaseUrl }),
-      setCustomModel: (customModel) => set({ customModel, model: customModel }),
-      clear: () => set({ apiKey: '' }),
-    }),
-    { name: 'restbox:api-config' },
-  ),
-)
+export const useApiKeyStore = create<ApiKeyStore>((set, get) => ({
+  providerId: initial.providerId,
+  apiKey: initial.apiKey,
+  model: initial.model,
+  customBaseUrl: initial.customBaseUrl,
+  customModel: initial.customModel,
+
+  setProvider: (providerId) => {
+    const p = getProvider(providerId)
+    set({
+      providerId,
+      model: p.custom ? get().customModel || '' : p.defaultModel,
+      apiKey: '',
+    })
+    saveConfig(get())
+  },
+  setApiKey: (apiKey) => {
+    set({ apiKey: apiKey.trim() })
+    saveConfig(get())
+  },
+  setModel: (model) => {
+    set({ model })
+    saveConfig(get())
+  },
+  setCustomBaseUrl: (customBaseUrl) => {
+    set({ customBaseUrl })
+    saveConfig(get())
+  },
+  setCustomModel: (customModel) => {
+    set({ customModel, model: customModel })
+    saveConfig(get())
+  },
+  clear: () => {
+    set({ apiKey: '' })
+    saveConfig(get())
+  },
+}))
+
+function saveConfig(state: ApiKeyStore): void {
+  storage.set<StoredConfig>(CONFIG_KEY, {
+    providerId: state.providerId,
+    apiKey: state.apiKey,
+    model: state.model,
+    customBaseUrl: state.customBaseUrl,
+    customModel: state.customModel,
+  })
+}
 
 export interface ActiveConfig {
   providerId: string

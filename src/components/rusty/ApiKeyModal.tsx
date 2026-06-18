@@ -31,7 +31,7 @@ export function ApiKeyModal({ onClose }: Props) {
 
   const provider = getProvider(providerId)
   const currentModel = provider.custom ? customModel : model || provider.defaultModel
-  const baseUrl = provider.custom ? customBaseUrl : provider.baseUrl
+  const effectiveBaseUrl = provider.custom ? customBaseUrl : provider.baseUrl
 
   const [keyValue, setKeyValue] = useState(storedApiKey)
   const [showKey, setShowKey] = useState(false)
@@ -40,29 +40,22 @@ export function ApiKeyModal({ onClose }: Props) {
   const [models, setModels] = useState<string[]>([])
   const [keyStatus, setKeyStatus] = useState<KeyStatus>('idle')
   const [keyError, setKeyError] = useState<string | null>(null)
-  const currentModelRef = useRef(currentModel)
-  currentModelRef.current = currentModel
+  const isMounted = useRef(false)
 
-  const doFetchModels = useCallback(
+  const runFetchModels = useCallback(
     async (key: string, pid: string, url: string, cModel?: string) => {
       if (!key.trim()) {
         setModels([])
         setKeyStatus('idle')
+        setKeyError(null)
         return
       }
       setKeyStatus('loading')
       setKeyError(null)
       const result: FetchModelsResult = await fetchModels(pid, key, url, cModel)
       setModels(result.models)
-      if (result.source === 'api') {
+      if (result.source === 'api' && result.models.length > 0) {
         setKeyStatus('ok')
-        if (result.models.length > 0 && !result.models.includes(currentModelRef.current)) {
-          if (pid === 'custom') {
-            setCustomModel(result.models[0])
-          } else {
-            setModel(result.models[0])
-          }
-        }
       } else if (result.error) {
         setKeyStatus('error')
         setKeyError(result.error)
@@ -70,10 +63,21 @@ export function ApiKeyModal({ onClose }: Props) {
         setKeyStatus('ok')
       }
     },
-    [setModel, setCustomModel],
+    [],
   )
 
+  // Instant fetch on mount if stored key exists
   useEffect(() => {
+    if (storedApiKey.trim()) {
+      void runFetchModels(storedApiKey, providerId, effectiveBaseUrl, customModel)
+    }
+    isMounted.current = true
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Debounced fetch on key/provider change (not initial mount)
+  useEffect(() => {
+    if (!isMounted.current) return
     if (!keyValue.trim()) {
       setModels([])
       setKeyStatus('idle')
@@ -81,7 +85,7 @@ export function ApiKeyModal({ onClose }: Props) {
       return
     }
     const timer = setTimeout(() => {
-      void doFetchModels(keyValue, providerId, provider.custom ? customBaseUrl : provider.baseUrl, customModel)
+      void runFetchModels(keyValue, providerId, effectiveBaseUrl, customModel)
     }, 500)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,12 +102,15 @@ export function ApiKeyModal({ onClose }: Props) {
   const handleSave = () => {
     setApiKey(keyValue)
     if (provider.custom) setCustomModel(customModel)
+    if (!provider.custom && models.length > 0 && !models.includes(currentModel)) {
+      setModel(models[0])
+    }
     setSaved(true)
     setTimeout(() => setSaved(false), 1500)
   }
 
   const handleTest = () => {
-    void doFetchModels(keyValue, providerId, provider.custom ? customBaseUrl : provider.baseUrl, customModel)
+    void runFetchModels(keyValue, providerId, effectiveBaseUrl, customModel)
   }
 
   const handleClear = () => {
@@ -116,7 +123,7 @@ export function ApiKeyModal({ onClose }: Props) {
 
   const canSave =
     keyValue.trim().length > 0 &&
-    (!provider.custom || (baseUrl.trim().length > 0 && currentModel.trim().length > 0))
+    (!provider.custom || (effectiveBaseUrl.trim().length > 0 && currentModel.trim().length > 0))
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
@@ -130,7 +137,7 @@ export function ApiKeyModal({ onClose }: Props) {
         </div>
 
         <div className="overflow-y-auto scrollbar-thin p-5 space-y-4">
-          {/* Provider */}
+          {/* Provider grid */}
           <div>
             <label className="block text-xs text-text-secondary mb-2 font-medium">
               {isEn ? 'Provider' : 'Провайдер'}
@@ -155,60 +162,24 @@ export function ApiKeyModal({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Custom: Base URL + Model input */}
+          {/* Custom: Base URL */}
           {provider.custom && (
-            <>
-              <div>
-                <label className="block text-xs text-text-secondary mb-1 font-medium">Base URL</label>
-                <input
-                  value={customBaseUrl}
-                  onChange={(e) => setCustomBaseUrl(e.target.value)}
-                  placeholder="https://api.example.com/v1"
-                  className="input-base font-mono text-xs"
-                />
-              </div>
-              {keyStatus === 'error' || models.length === 0 ? (
-                <div>
-                  <label className="block text-xs text-text-secondary mb-1 font-medium">
-                    {isEn ? 'Model name' : 'Имя модели'}
-                  </label>
-                  <input
-                    value={customModel}
-                    onChange={(e) => setCustomModel(e.target.value)}
-                    placeholder="gpt-4o-mini"
-                    className="input-base font-mono text-xs"
-                  />
-                </div>
-              ) : (
-                <ModelSelect
-                  models={models}
-                  currentModel={currentModel}
-                  keyStatus={keyStatus}
-                  onChange={(m) => setCustomModel(m)}
-                  isEn={isEn}
-                  keyValue={keyValue}
-                />
-              )}
-            </>
-          )}
-
-          {/* Standard providers: Model dropdown */}
-          {!provider.custom && (
-            <ModelSelect
-              models={models}
-              currentModel={currentModel}
-              keyStatus={keyStatus}
-              onChange={(m) => setModel(m)}
-              isEn={isEn}
-              keyValue={keyValue}
-            />
+            <div>
+              <label className="block text-xs text-text-secondary mb-1 font-medium">Base URL</label>
+              <input
+                value={customBaseUrl}
+                onChange={(e) => setCustomBaseUrl(e.target.value)}
+                placeholder="https://api.example.com/v1"
+                className="input-base font-mono text-xs"
+              />
+            </div>
           )}
 
           {/* API Key */}
           <div>
             <label className="block text-xs text-text-secondary mb-1.5 font-medium flex items-center gap-2">
               {isEn ? 'API Key' : 'API-ключ'}
-              {keyStatus === 'ok' && <span className="text-success text-xs">✅</span>}
+              {keyStatus === 'ok' && keyValue.trim() && <span className="text-success text-xs">✅</span>}
               {keyStatus === 'error' && <span className="text-error text-xs">❌</span>}
             </label>
             <div className="relative">
@@ -217,7 +188,7 @@ export function ApiKeyModal({ onClose }: Props) {
                 onChange={(e) => setKeyValue(e.target.value)}
                 onBlur={() => {
                   if (keyValue.trim()) {
-                    void doFetchModels(keyValue, providerId, provider.custom ? customBaseUrl : provider.baseUrl, customModel)
+                    void runFetchModels(keyValue, providerId, effectiveBaseUrl, customModel)
                   }
                 }}
                 type={showKey ? 'text' : 'password'}
@@ -239,15 +210,50 @@ export function ApiKeyModal({ onClose }: Props) {
             {keyStatus === 'error' && keyError && (
               <p className="mt-1 text-[11px] text-error">
                 {keyError === '401'
-                  ? isEn
-                    ? 'Invalid API key'
-                    : 'Неверный API-ключ'
-                  : isEn
-                    ? `Error: ${keyError}`
-                    : `Ошибка: ${keyError}`}
+                  ? isEn ? 'Invalid API key' : 'Неверный API-ключ'
+                  : keyError === 'network'
+                    ? isEn ? 'Network/CORS error — browser cannot reach this API directly' : 'Сетевая/CORS ошибка — браузер не может напрямую обратиться к этому API'
+                    : isEn ? `Error: ${keyError}` : `Ошибка: ${keyError}`}
               </p>
             )}
           </div>
+
+          {/* Model dropdown (non-custom) or text input (custom) */}
+          {!provider.custom && (
+            <ModelSelect
+              models={models}
+              currentModel={currentModel}
+              keyStatus={keyStatus}
+              onChange={(m) => setModel(m)}
+              isEn={isEn}
+              keyValue={keyValue}
+            />
+          )}
+
+          {provider.custom && (keyStatus === 'error' || models.length === 0) && (
+            <div>
+              <label className="block text-xs text-text-secondary mb-1 font-medium">
+                {isEn ? 'Model name (manual)' : 'Имя модели (вручную)'}
+              </label>
+              <input
+                value={customModel}
+                onChange={(e) => setCustomModel(e.target.value)}
+                placeholder="gpt-4o-mini"
+                className="input-base font-mono text-xs"
+              />
+            </div>
+          )}
+
+          {provider.custom && models.length > 0 && keyStatus === 'ok' && (
+            <ModelSelect
+              models={models}
+              currentModel={currentModel}
+              keyStatus={keyStatus}
+              onChange={(m) => setCustomModel(m)}
+              isEn={isEn}
+              keyValue={keyValue}
+            />
+          )}
 
           {/* Buttons */}
           <div className="flex items-center gap-2">
@@ -326,6 +332,11 @@ function ModelSelect({
   const noKey = !keyValue.trim()
   const loading = keyStatus === 'loading'
 
+  // If current model not in loaded list, show it as first option
+  const displayModels = hasModels && !models.includes(currentModel) && currentModel
+    ? [currentModel, ...models]
+    : models
+
   return (
     <div>
       <label className="block text-xs text-text-secondary mb-1 font-medium flex items-center gap-2">
@@ -350,12 +361,9 @@ function ModelSelect({
             {isEn ? 'Loading models…' : 'Загрузка моделей…'}
           </option>
         )}
-        {hasModels &&
-          models.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
+        {displayModels.map((m) => (
+          <option key={m} value={m}>{m}</option>
+        ))}
       </select>
     </div>
   )
