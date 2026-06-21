@@ -36,7 +36,7 @@ export function UrlInput() {
       colId = createCollection(newCollectionName.trim())
     }
     if (!colId) return
-    const req = { ...JSON.parse(JSON.stringify(current)), id: uuid(), name: saveName.trim() || 'Untitled' }
+    const req = { ...structuredClone(current), id: uuid(), name: saveName.trim() || 'Untitled' }
     addRequest(colId, req)
     setName(req.name)
     setSaving(false)
@@ -45,7 +45,7 @@ export function UrlInput() {
 
   const saveChanges = () => {
     if (!loadedCollectionId || !loadedRequestId) return
-    const req = { ...JSON.parse(JSON.stringify(current)), id: loadedRequestId }
+    const req = { ...structuredClone(current), id: loadedRequestId }
     addRequest(loadedCollectionId, req)
     setSavedFlash(true)
     setTimeout(() => setSavedFlash(false), 1500)

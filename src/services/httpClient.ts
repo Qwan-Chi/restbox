@@ -19,7 +19,9 @@ function buildHeaders(
       break
     case 'basic':
       if (auth.basic?.username) {
-        const token = btoa(`${auth.basic.username}:${auth.basic.password ?? ''}`)
+        const credentials = `${auth.basic.username}:${auth.basic.password ?? ''}`
+        // Use unescape(encodeURIComponent()) to handle Unicode characters
+        const token = btoa(unescape(encodeURIComponent(credentials)))
         result['Authorization'] = `Basic ${token}`
       }
       break
@@ -83,7 +85,12 @@ function networkError(message: string): ResponseData {
   }
 }
 
-export async function executeRequest(config: RequestConfig): Promise<ResponseData> {
+const DEFAULT_TIMEOUT_MS = 30_000
+
+export async function executeRequest(
+  config: RequestConfig,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+): Promise<ResponseData> {
   const start = performance.now()
 
   if (!config.url.trim()) {
@@ -100,6 +107,9 @@ export async function executeRequest(config: RequestConfig): Promise<ResponseDat
   const { body, contentType } = buildBody(config)
   const headers = buildHeaders(config.headers, config.auth, contentType)
 
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+
   let response: Response
   try {
     response = await fetch(finalUrl, {
@@ -107,17 +117,24 @@ export async function executeRequest(config: RequestConfig): Promise<ResponseDat
       headers,
       body,
       redirect: 'follow',
+      signal: controller.signal,
     })
   } catch (e) {
+    clearTimeout(timer)
     const duration = performance.now() - start
+    const isTimeout = e instanceof DOMException && e.name === 'AbortError'
     const err = networkError(
-      `Не удалось выполнить запрос к ${finalUrl}.\n\nСкорее всего это CORS-ошибка или сервер недоступен.\n\nТехнически: ${
-        e instanceof Error ? e.message : String(e)
-      }`,
+      isTimeout
+        ? `Запрос превысил лимит времени (${Math.round(timeoutMs / 1000)}с). Сервер не ответил вовремя.\n\nURL: ${finalUrl}`
+        : `Не удалось выполнить запрос к ${finalUrl}.\n\nСкорее всего это CORS-ошибка или сервер недоступен.\n\nТехнически: ${
+            e instanceof Error ? e.message : String(e)
+          }`,
     )
     err.duration = duration
     return err
   }
+
+  clearTimeout(timer)
 
   const duration = performance.now() - start
   const rawBody = await response.text()

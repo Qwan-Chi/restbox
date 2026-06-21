@@ -71,7 +71,7 @@ export const useRequestStore = create<RequestStore>((set) => ({
   setError: (error) => set({ error }),
   loadRequest: (request, collectionId) =>
     set({
-      current: JSON.parse(JSON.stringify(request)),
+      current: structuredClone(request),
       response: null,
       error: null,
       loadedCollectionId: collectionId ?? null,

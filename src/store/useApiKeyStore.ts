@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 import { getProvider } from '@/services/providers'
 import { storage } from '@/utils/storage'
+import { encrypt, decrypt } from '@/utils/crypto'
 
 const CONFIG_KEY = 'api-config'
 
 interface StoredConfig {
   providerId: string
-  apiKey: string
+  apiKey: string // encrypted or legacy plain
   model: string
   customBaseUrl: string
   customModel: string
@@ -30,6 +31,7 @@ interface ApiKeyStore {
   model: string
   customBaseUrl: string
   customModel: string
+  keyReady: boolean // false until async decrypt completes
 
   setProvider: (id: string) => void
   setApiKey: (key: string) => void
@@ -39,14 +41,15 @@ interface ApiKeyStore {
   clear: () => void
 }
 
-const initial = loadConfig()
+const initialRaw = loadConfig()
 
 export const useApiKeyStore = create<ApiKeyStore>((set, get) => ({
-  providerId: initial.providerId,
-  apiKey: initial.apiKey,
-  model: initial.model,
-  customBaseUrl: initial.customBaseUrl,
-  customModel: initial.customModel,
+  providerId: initialRaw.providerId,
+  apiKey: '', // start empty — will be filled by async decrypt
+  model: initialRaw.model,
+  customBaseUrl: initialRaw.customBaseUrl,
+  customModel: initialRaw.customModel,
+  keyReady: false,
 
   setProvider: (providerId) => {
     const p = getProvider(providerId)
@@ -79,13 +82,25 @@ export const useApiKeyStore = create<ApiKeyStore>((set, get) => ({
   },
 }))
 
+// Async: decrypt the stored API key on startup
+void decrypt(initialRaw.apiKey).then((decrypted) => {
+  if (decrypted) {
+    useApiKeyStore.setState({ apiKey: decrypted, keyReady: true })
+  } else {
+    useApiKeyStore.setState({ keyReady: true })
+  }
+})
+
 function saveConfig(state: ApiKeyStore): void {
-  storage.set<StoredConfig>(CONFIG_KEY, {
-    providerId: state.providerId,
-    apiKey: state.apiKey,
-    model: state.model,
-    customBaseUrl: state.customBaseUrl,
-    customModel: state.customModel,
+  // Encrypt API key before persisting to localStorage
+  void encrypt(state.apiKey).then((encKey) => {
+    storage.set<StoredConfig>(CONFIG_KEY, {
+      providerId: state.providerId,
+      apiKey: encKey,
+      model: state.model,
+      customBaseUrl: state.customBaseUrl,
+      customModel: state.customModel,
+    })
   })
 }
 

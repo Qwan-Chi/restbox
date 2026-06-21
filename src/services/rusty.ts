@@ -385,12 +385,16 @@ async function* streamAnthropic(
   yield* parseAnthropicSSE(res, signal)
 }
 
-async function* parseOpenAISSE(res: Response, _signal?: AbortSignal): AsyncGenerator<string> {
+async function* parseOpenAISSE(res: Response, signal?: AbortSignal): AsyncGenerator<string> {
   const reader = res.body!.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
   try {
     while (true) {
+      if (signal?.aborted) {
+        await reader.cancel().catch(() => {})
+        return
+      }
       const { done, value } = await reader.read()
       if (done) break
       buffer += decoder.decode(value, { stream: true })
@@ -415,12 +419,16 @@ async function* parseOpenAISSE(res: Response, _signal?: AbortSignal): AsyncGener
   }
 }
 
-async function* parseAnthropicSSE(res: Response, _signal?: AbortSignal): AsyncGenerator<string> {
+async function* parseAnthropicSSE(res: Response, signal?: AbortSignal): AsyncGenerator<string> {
   const reader = res.body!.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
   try {
     while (true) {
+      if (signal?.aborted) {
+        await reader.cancel().catch(() => {})
+        return
+      }
       const { done, value } = await reader.read()
       if (done) break
       buffer += decoder.decode(value, { stream: true })
