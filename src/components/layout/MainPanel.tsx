@@ -23,22 +23,25 @@ export function MainPanel() {
   )
 
   return (
-    <main className="flex-1 flex flex-col bg-app-bg min-w-[300px]">
+    <main className="flex-1 flex flex-col bg-app-bg min-w-[300px] overflow-hidden">
       <form
         onSubmit={(e) => e.preventDefault()}
-        className="flex items-stretch border-b border-app-border"
+        className="flex items-stretch border-b border-app-border min-w-0"
       >
         <MethodSelect value={method} onChange={setMethod} />
         <UrlInput />
         <SendButton />
       </form>
 
-      <div className="flex flex-1 min-h-0">
-        <div className="shrink-0 border-r border-app-border flex flex-col min-w-0 overflow-hidden" style={{ width: editorWidth }}>
+      <div className="flex flex-1 min-h-0 min-w-0">
+        <div
+          className="shrink-0 border-r border-app-border flex flex-col min-w-0 overflow-hidden max-w-full"
+          style={{ width: editorWidth }}
+        >
           <TabsEditor />
         </div>
         <ResizeHandle direction="horizontal" onResize={onEditorResize} title="↔" />
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <ResponsePanel />
         </div>
       </div>

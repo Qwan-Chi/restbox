@@ -21,7 +21,7 @@ export function RustyChat() {
     <div className="flex flex-col flex-1 min-h-0 min-w-0 w-full max-w-full">
       <div className="flex-1 overflow-auto scrollbar-thin px-3 py-3 space-y-3 min-w-0 w-full max-w-full">
         {messages.length === 0 ? (
-          <div className="text-text-secondary text-xs mt-8 px-4 break-words max-w-full">
+          <div className="text-text-secondary text-xs mt-8 px-4 break-all max-w-full">
             <p className="mb-1">{t('rusty.hello')}</p>
             <p>{t('rusty.helloHint')}</p>
           </div>
