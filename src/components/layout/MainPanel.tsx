@@ -23,7 +23,7 @@ export function MainPanel() {
   )
 
   return (
-    <main className="flex-1 flex flex-col min-w-0 bg-app-bg">
+    <main className="flex-1 flex flex-col bg-app-bg min-w-[300px]">
       <form
         onSubmit={(e) => e.preventDefault()}
         className="flex items-stretch border-b border-app-border"
