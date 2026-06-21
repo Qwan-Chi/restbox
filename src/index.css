@@ -93,8 +93,12 @@
 /* react-markdown / rehype-highlight */
 .rusty-markdown {
   @apply text-sm leading-relaxed text-text-primary;
-  overflow-wrap: break-word;
+  min-width: 0;
+  overflow-wrap: anywhere;
   word-break: break-word;
+}
+.rusty-markdown > * {
+  min-width: 0;
 }
 .rusty-markdown h1,
 .rusty-markdown h2,

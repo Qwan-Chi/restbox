@@ -22,8 +22,8 @@ export function RustyActions() {
   const disabled = status === 'thinking'
 
   return (
-    <div className="border-t border-app-border px-3 py-2">
-      <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-1">
+    <div className="border-t border-app-border px-3 py-2 min-w-0">
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-thin pb-1 min-w-0">
         {RUSTY_QUICK_ACTIONS.map((a, i) => (
           <button
             key={a.labelKey}

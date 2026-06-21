@@ -19,7 +19,7 @@ interface LayoutStore {
 export const LIMITS = {
   sidebar: { min: 180, max: 420 },
   editor: { min: 280, max: 900 },
-  rusty: { min: 320, max: 800 },
+  rusty: { min: 360, max: 800 },
 }
 
 export const useLayoutStore = create<LayoutStore>()(

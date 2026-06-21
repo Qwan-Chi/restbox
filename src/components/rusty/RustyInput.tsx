@@ -35,7 +35,7 @@ export function RustyInput() {
           }}
           placeholder={t('rusty.inputPlaceholder')}
           rows={1}
-          className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-secondary resize-none outline-none max-h-32 scrollbar-thin"
+          className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-secondary resize-none outline-none max-h-32 scrollbar-thin min-w-0"
         />
         <button
           type="submit"

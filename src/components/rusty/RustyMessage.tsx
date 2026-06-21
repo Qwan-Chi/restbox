@@ -55,12 +55,12 @@ export const RustyMessage = memo(function RustyMessage({ message }: Props) {
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 min-w-0 overflow-hidden">
       <div className="shrink-0 pt-0.5">
         <RustyAvatar status="online" size={24} />
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="rusty-markdown">
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <div className="rusty-markdown min-w-0">
           {message.content ? (
             <ReactMarkdown
               rehypePlugins={[rehypeHighlight]}

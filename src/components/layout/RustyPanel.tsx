@@ -53,19 +53,19 @@ export function RustyPanel() {
     <aside
       className="h-full flex flex-col bg-app-panel border-l border-app-border min-w-0 overflow-hidden"
     >
-      <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-app-border">
-        <RustyAvatar status={statusKey} size={32} />
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-text-primary leading-tight flex items-center gap-1.5">
-            Rusty
+      <div className="flex items-center gap-1.5 px-2 py-2 border-b border-app-border min-w-0">
+        <RustyAvatar status={statusKey} size={28} />
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="text-sm font-semibold text-text-primary leading-tight flex items-center gap-1 min-w-0">
+            <span className="truncate">Rusty</span>
             <span className="text-[10px] font-normal text-text-secondary truncate">
               · {sessionTitle}
             </span>
           </div>
-          <div className={cn('text-[11px] leading-tight flex items-center gap-1', statusColor)}>
+          <div className={cn('text-[11px] leading-tight flex items-center gap-1 min-w-0 truncate', statusColor)}>
             {t(statusLabelKey)}
             {apiReady && (
-              <span className="text-text-secondary/60">
+              <span className="text-text-secondary/60 truncate">
                 · {provider.icon} {provider.name}
               </span>
             )}
