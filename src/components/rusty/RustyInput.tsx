@@ -22,8 +22,8 @@ export function RustyInput() {
   }
 
   return (
-    <form onSubmit={submit} className="border-t border-app-border p-3">
-      <div className="flex items-end gap-2 bg-app-input border border-app-border rounded-lg px-2 py-1.5 focus-within:border-accent transition-colors">
+    <form onSubmit={submit} className="border-t border-app-border p-3 max-w-full">
+      <div className="flex items-end gap-2 bg-app-input border border-app-border rounded-lg px-2 py-1.5 focus-within:border-accent transition-colors max-w-full">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}

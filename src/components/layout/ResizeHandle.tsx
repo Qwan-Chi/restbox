@@ -53,7 +53,7 @@ export function ResizeHandle({ direction, onResize, title }: Props) {
     <div
       onMouseDown={onMouseDown}
       className={cn(
-        'shrink-0 relative group transition-colors z-10 flex items-center justify-center',
+        'shrink-0 relative group transition-colors z-50 flex items-center justify-center',
         isHorizontal
           ? 'w-3 cursor-col-resize h-full'
           : 'h-3 cursor-row-resize w-full',

@@ -51,9 +51,9 @@ export function RustyPanel() {
 
   return (
     <aside
-      className="h-full flex flex-col bg-app-panel border-l border-app-border min-w-0 overflow-hidden"
+      className="h-full flex flex-col bg-app-panel border-l border-app-border min-w-0 overflow-hidden relative w-full"
     >
-      <div className="flex items-center gap-1.5 px-2 py-2 border-b border-app-border min-w-0">
+      <div className="flex items-center gap-1.5 px-2 py-2 border-b border-app-border min-w-0 w-full max-w-full">
         <RustyAvatar status={statusKey} size={28} />
         <div className="flex-1 min-w-0 overflow-hidden">
           <div className="text-sm font-semibold text-text-primary leading-tight flex items-center gap-1 min-w-0">
