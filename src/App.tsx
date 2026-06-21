@@ -62,26 +62,30 @@ export default function App() {
     )
   }
 
+  const leftCol = sidebarCollapsed ? '32px' : `${sidebarWidth}px`
+  const rightCol = rustyCollapsed ? '32px' : `${rustyWidth}px`
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-app-bg text-text-primary">
-      {!sidebarCollapsed && (
-        <>
-          <div className="shrink-0 min-w-0 overflow-hidden relative z-0" style={{ width: sidebarWidth }}>
-            <Sidebar />
-          </div>
-          <ResizeHandle direction="horizontal" onResize={onSidebarResize} title="↔" />
-        </>
+    <div
+      className="h-screen w-screen overflow-hidden bg-app-bg text-text-primary grid"
+      style={{ gridTemplateColumns: `${leftCol} 12px minmax(0, 1fr) 12px ${rightCol}` }}
+    >
+      {sidebarCollapsed ? (
+        <CollapsedBar label="☰" onClick={toggleSidebar} side="left" />
+      ) : (
+        <div className="min-w-0 overflow-hidden relative z-0">
+          <Sidebar />
+        </div>
       )}
-      {sidebarCollapsed && <CollapsedBar label="☰" onClick={toggleSidebar} side="left" />}
+      <ResizeHandle direction="horizontal" onResize={onSidebarResize} title="↔" />
       <MainPanel />
-      {rustyCollapsed && <CollapsedBar label="🔩" onClick={toggleRusty} side="right" />}
-      {!rustyCollapsed && (
-        <>
-          <ResizeHandle direction="horizontal" onResize={onRustyResize} title="↔" />
-          <div className="shrink-0 min-w-0 overflow-hidden relative z-0" style={{ width: rustyWidth }}>
-            <RustyPanel />
-          </div>
-        </>
+      <ResizeHandle direction="horizontal" onResize={onRustyResize} title="↔" />
+      {rustyCollapsed ? (
+        <CollapsedBar label="🔩" onClick={toggleRusty} side="right" />
+      ) : (
+        <div className="min-w-0 overflow-hidden relative z-0">
+          <RustyPanel />
+        </div>
       )}
     </div>
   )
