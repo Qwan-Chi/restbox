@@ -29,6 +29,7 @@ export interface RequestConfig {
     type: BodyType
     content: string
     formData: KeyValuePair[]
+    binaryFile?: { name: string; size: number } | null
   }
   auth: RequestAuth
 }

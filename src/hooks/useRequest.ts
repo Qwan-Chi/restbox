@@ -14,6 +14,7 @@ export function useRequest() {
   const setError = useRequestStore((s) => s.setError)
   const addHistory = useHistoryStore((s) => s.add)
   const setAnomalies = useRustyStore((s) => s.setAnomalies)
+  const binaryFileObj = useRequestStore((s) => s.binaryFileObj)
 
   const send = useCallback(
     async (config?: RequestConfig) => {
@@ -21,7 +22,7 @@ export function useRequest() {
       setLoading(true)
       setError(null)
       try {
-        const res = await executeRequest(req)
+        const res = await executeRequest(req, undefined, binaryFileObj)
         setResponse(res)
         const anomalies = detectAnomalies(res)
         setAnomalies(anomalies)
@@ -43,7 +44,7 @@ export function useRequest() {
         setLoading(false)
       }
     },
-    [current, setLoading, setError, setResponse, setAnomalies, addHistory],
+    [current, binaryFileObj, setLoading, setError, setResponse, setAnomalies, addHistory],
   )
 
   return {

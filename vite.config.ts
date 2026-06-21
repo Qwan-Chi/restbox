@@ -14,4 +14,23 @@ export default defineConfig({
     port: 5173,
     host: true,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-codemirror': [
+            '@codemirror/autocomplete',
+            '@codemirror/commands',
+            '@codemirror/lang-json',
+            '@codemirror/lint',
+            '@codemirror/state',
+            '@codemirror/view',
+            'codemirror',
+          ],
+          'vendor-markdown': ['react-markdown', 'rehype-highlight', 'highlight.js'],
+        },
+      },
+    },
+  },
 })

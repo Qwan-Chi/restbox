@@ -50,7 +50,10 @@ function buildUrl(url: string, params: KeyValuePair[], auth: RequestAuth): strin
   return url.includes('?') ? `${url}&${qs}` : `${url}?${qs}`
 }
 
-function buildBody(config: RequestConfig): { body: BodyInit | null; contentType?: string } {
+function buildBody(
+  config: RequestConfig,
+  binaryFile?: File | null,
+): { body: BodyInit | null; contentType?: string } {
   const { type, content, formData } = config.body
   switch (type) {
     case 'none':
@@ -67,7 +70,8 @@ function buildBody(config: RequestConfig): { body: BodyInit | null; contentType?
       return { body: fd }
     }
     case 'binary':
-      return { body: content }
+      if (binaryFile) return { body: binaryFile }
+      return { body: null }
   }
 }
 
@@ -90,6 +94,7 @@ const DEFAULT_TIMEOUT_MS = 30_000
 export async function executeRequest(
   config: RequestConfig,
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
+  binaryFile?: File | null,
 ): Promise<ResponseData> {
   const start = performance.now()
 
@@ -104,7 +109,7 @@ export async function executeRequest(
     return networkError(`Некорректный URL: "${config.url}".`)
   }
 
-  const { body, contentType } = buildBody(config)
+  const { body, contentType } = buildBody(config, binaryFile)
   const headers = buildHeaders(config.headers, config.auth, contentType)
 
   const controller = new AbortController()

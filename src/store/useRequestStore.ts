@@ -36,6 +36,7 @@ interface RequestStore {
   error: string | null
   loadedCollectionId: string | null
   loadedRequestId: string | null
+  binaryFileObj: File | null
 
   setMethod: (method: HttpMethod) => void
   setUrl: (url: string) => void
@@ -44,6 +45,7 @@ interface RequestStore {
   setParams: (params: KeyValuePair[]) => void
   setBody: (body: RequestConfig['body']) => void
   setAuth: (auth: RequestAuth) => void
+  setBinaryFile: (file: File | null) => void
   setResponse: (response: ResponseData | null) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
@@ -58,6 +60,7 @@ export const useRequestStore = create<RequestStore>((set) => ({
   error: null,
   loadedCollectionId: null,
   loadedRequestId: null,
+  binaryFileObj: null,
 
   setMethod: (method) => set((s) => ({ current: { ...s.current, method } })),
   setUrl: (url) => set((s) => ({ current: { ...s.current, url } })),
@@ -66,6 +69,7 @@ export const useRequestStore = create<RequestStore>((set) => ({
   setParams: (params) => set((s) => ({ current: { ...s.current, params } })),
   setBody: (body) => set((s) => ({ current: { ...s.current, body } })),
   setAuth: (auth) => set((s) => ({ current: { ...s.current, auth } })),
+  setBinaryFile: (binaryFileObj) => set({ binaryFileObj }),
   setResponse: (response) => set({ response }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
@@ -74,6 +78,7 @@ export const useRequestStore = create<RequestStore>((set) => ({
       current: structuredClone(request),
       response: null,
       error: null,
+      binaryFileObj: null,
       loadedCollectionId: collectionId ?? null,
       loadedRequestId: collectionId ? request.id : null,
     }),
@@ -83,6 +88,7 @@ export const useRequestStore = create<RequestStore>((set) => ({
       response: null,
       error: null,
       isLoading: false,
+      binaryFileObj: null,
       loadedCollectionId: null,
       loadedRequestId: null,
     }),

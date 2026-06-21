@@ -1,14 +1,19 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, lazy, Suspense } from 'react'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { MainPanel } from '@/components/layout/MainPanel'
-import { RustyPanel } from '@/components/layout/RustyPanel'
 import { ResizeHandle } from '@/components/layout/ResizeHandle'
-import { LoginScreen } from '@/components/auth/LoginScreen'
 import { useLayoutStore, LIMITS } from '@/store/useLayoutStore'
 import { useThemeStore, applyTheme } from '@/store/useThemeStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { cn } from '@/utils/cn'
+
+const LoginScreen = lazy(() =>
+  import('@/components/auth/LoginScreen').then((m) => ({ default: m.LoginScreen })),
+)
+const RustyPanel = lazy(() =>
+  import('@/components/layout/RustyPanel').then((m) => ({ default: m.RustyPanel })),
+)
 
 export default function App() {
   const sidebarWidth = useLayoutStore((s) => s.sidebarWidth)
@@ -46,7 +51,11 @@ export default function App() {
   )
 
   if (!user) {
-    return <LoginScreen />
+    return (
+      <Suspense fallback={<div className="h-screen w-screen bg-app-bg" />}>
+        <LoginScreen />
+      </Suspense>
+    )
   }
 
   if (isMobile) {
@@ -55,7 +64,11 @@ export default function App() {
         <div className="flex-1 min-h-0 overflow-hidden">
           {mobileTab === 'sidebar' && <Sidebar />}
           {mobileTab === 'editor' && <MainPanel />}
-          {mobileTab === 'rusty' && <RustyPanel />}
+          {mobileTab === 'rusty' && (
+            <Suspense fallback={<div className="h-full bg-app-panel" />}>
+              <RustyPanel />
+            </Suspense>
+          )}
         </div>
         <MobileTabBar tab={mobileTab} onChange={setMobileTab} />
       </div>
@@ -84,7 +97,9 @@ export default function App() {
         <CollapsedBar label="🔩" onClick={toggleRusty} side="right" />
       ) : (
         <div className="min-w-0 overflow-hidden relative z-0">
-          <RustyPanel />
+          <Suspense fallback={<div className="h-full bg-app-panel" />}>
+            <RustyPanel />
+          </Suspense>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import { useRequestStore, emptyKv } from '@/store/useRequestStore'
 import type { BodyType } from '@/types'
 import { KeyValueEditor } from './KeyValueEditor'
 import { JsonCodeEditor } from './JsonCodeEditor'
+import { BinaryFileUpload } from './BinaryFileUpload'
 import { isValidJson, formatJson } from '@/utils/formatJson'
 import { useT } from '@/utils/i18n'
 import { cn } from '@/utils/cn'
@@ -80,7 +81,7 @@ export function BodyEditor() {
         </div>
       )}
 
-      {(body.type === 'raw' || body.type === 'binary') && (
+      {body.type === 'raw' && (
         <div className="flex flex-col gap-1.5">
           <textarea
             value={body.content}
@@ -90,6 +91,10 @@ export function BodyEditor() {
             className="input-base font-mono text-xs resize-y scrollbar-thin"
           />
         </div>
+      )}
+
+      {body.type === 'binary' && (
+        <BinaryFileUpload />
       )}
 
       {body.type === 'form-data' && (
