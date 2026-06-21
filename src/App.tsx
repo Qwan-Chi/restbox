@@ -68,7 +68,7 @@ export default function App() {
   return (
     <div
       className="h-screen w-screen overflow-hidden bg-app-bg text-text-primary grid"
-      style={{ gridTemplateColumns: `${leftCol} 12px minmax(0, 1fr) 12px ${rightCol}` }}
+      style={{ gridTemplateColumns: `${leftCol} 16px minmax(0, 1fr) 16px ${rightCol}` }}
     >
       {sidebarCollapsed ? (
         <CollapsedBar label="☰" onClick={toggleSidebar} side="left" />

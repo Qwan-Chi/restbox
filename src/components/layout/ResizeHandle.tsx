@@ -55,7 +55,7 @@ export function ResizeHandle({ direction, onResize, title }: Props) {
       className={cn(
         'shrink-0 relative group transition-colors z-50 flex items-center justify-center',
         isHorizontal
-          ? 'w-3 cursor-col-resize h-full'
+          ? 'w-4 cursor-col-resize h-full'
           : 'h-3 cursor-row-resize w-full',
         dragging ? 'bg-accent/10' : 'hover:bg-accent/5',
       )}
@@ -64,7 +64,7 @@ export function ResizeHandle({ direction, onResize, title }: Props) {
       <div
         className={cn(
           'rounded-full transition-colors',
-          isHorizontal ? 'w-1.5 h-full' : 'h-1.5 w-full',
+          isHorizontal ? 'w-1 h-full' : 'h-1.5 w-full',
           dragging ? 'bg-accent' : 'bg-app-border group-hover:bg-accent/60',
         )}
       />
