@@ -10,7 +10,7 @@ import { UserMenu } from '@/components/auth/UserMenu'
 import { useT } from '@/utils/i18n'
 import { cn } from '@/utils/cn'
 import { formatBytes, formatDuration } from '@/utils/formatJson'
-import type { HttpMethod } from '@/types'
+import type { HttpMethod, HistoryItem } from '@/types'
 
 const METHOD_COLOR: Record<HttpMethod, string> = {
   GET: 'text-method-get',
@@ -40,10 +40,33 @@ export function Sidebar() {
   const [newName, setNewName] = useState('')
   const [adding, setAdding] = useState(false)
 
+  const renameHistory = useHistoryStore((s) => s.rename)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+
   const onLoadHistory = (item: (typeof history)[number]) => {
     loadRequest(item.request)
     setResponse(item.response)
     setAnomalies([])
+  }
+
+  const startRename = (e: React.MouseEvent, item: (typeof history)[number]) => {
+    e.stopPropagation()
+    setEditingId(item.id)
+    setEditName(item.name || item.request.url || '')
+  }
+
+  const commitRename = () => {
+    if (editingId) {
+      renameHistory(editingId, editName)
+      setEditingId(null)
+      setEditName('')
+    }
+  }
+
+  const cancelRename = () => {
+    setEditingId(null)
+    setEditName('')
   }
 
   return (
@@ -84,49 +107,17 @@ export function Sidebar() {
             {history.length === 0 ? (
               <EmptyState text={t('sidebar.historyEmpty')} />
             ) : (
-              history.map((item) => {
-                const url = item.request.url
-                const short = url.length > 38 ? url.slice(0, 36) + '…' : url || '(no url)'
-                return (
-                  <div
-                    key={item.id}
-                    className="group flex items-center gap-2 px-3 py-2 border-b border-app-border/40 hover:bg-app-hover cursor-pointer"
-                    onClick={() => onLoadHistory(item)}
-                  >
-                    <span className={cn('text-[10px] font-bold uppercase w-12 shrink-0', METHOD_COLOR[item.request.method])}>
-                      {item.request.method}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-text-primary truncate font-mono">{short}</div>
-                      <div className="text-[10px] text-text-secondary flex gap-2">
-                        <span
-                          className={cn(
-                            item.response.status >= 200 && item.response.status < 300
-                              ? 'text-success'
-                              : item.response.status >= 400
-                                ? 'text-error'
-                                : 'text-text-secondary',
-                          )}
-                        >
-                          {item.response.status}
-                        </span>
-                        <span>{formatDuration(item.response.duration)}</span>
-                        <span>{formatBytes(item.response.size)}</span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        removeHistory(item.id)
-                      }}
-                      className="opacity-0 group-hover:opacity-100 btn-icon h-5 w-5 text-[10px]"
-                      title={t('kv.delete')}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )
-              })
+              <HistoryList
+                history={history}
+                editingId={editingId}
+                editName={editName}
+                setEditName={setEditName}
+                onLoad={onLoadHistory}
+                onRename={startRename}
+                onCommit={commitRename}
+                onCancel={cancelRename}
+                onDelete={removeHistory}
+              />
             )}
           </div>
         ) : (
@@ -228,6 +219,105 @@ export function Sidebar() {
 
       <UserMenu />
     </aside>
+  )
+}
+
+function HistoryList({
+  history,
+  editingId,
+  editName,
+  setEditName,
+  onLoad,
+  onRename,
+  onCommit,
+  onCancel,
+  onDelete,
+}: {
+  history: HistoryItem[]
+  editingId: string | null
+  editName: string
+  setEditName: (v: string) => void
+  onLoad: (item: HistoryItem) => void
+  onRename: (e: React.MouseEvent, item: HistoryItem) => void
+  onCommit: () => void
+  onCancel: () => void
+  onDelete: (id: string) => void
+}) {
+  const t = useT()
+  return (
+    <>
+      {history.map((item) => {
+        const displayName = item.name || item.request.url || t('sidebar.untitled')
+        const short = displayName.length > 38 ? displayName.slice(0, 36) + '…' : displayName
+        const isEditing = editingId === item.id
+        return (
+          <div
+            key={item.id}
+            className="group flex items-center gap-2 px-3 py-2 border-b border-app-border/40 hover:bg-app-hover cursor-pointer"
+            onClick={() => onLoad(item)}
+          >
+            <span className={cn('text-[10px] font-bold uppercase w-12 shrink-0', METHOD_COLOR[item.request.method])}>
+              {item.request.method}
+            </span>
+            <div className="flex-1 min-w-0">
+              {isEditing ? (
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') onCommit()
+                    else if (e.key === 'Escape') onCancel()
+                  }}
+                  onBlur={onCommit}
+                  autoFocus
+                  className="input-base py-0.5 text-xs w-full"
+                />
+              ) : (
+                <div className="text-xs text-text-primary truncate font-mono">{short}</div>
+              )}
+              <div className="text-[10px] text-text-secondary flex gap-2">
+                <span
+                  className={cn(
+                    item.response.status >= 200 && item.response.status < 300
+                      ? 'text-success'
+                      : item.response.status >= 400
+                        ? 'text-error'
+                        : 'text-text-secondary',
+                  )}
+                >
+                  {item.response.status}
+                </span>
+                <span>{formatDuration(item.response.duration)}</span>
+                <span>{formatBytes(item.response.size)}</span>
+              </div>
+            </div>
+            {!isEditing && (
+              <button
+                onClick={(e) => onRename(e, item)}
+                className="opacity-0 group-hover:opacity-100 btn-icon h-5 w-5 text-[10px]"
+                title={t('sidebar.renameHistory')}
+              >
+                ✎
+              </button>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete(item.id)
+              }}
+              className={cn(
+                'btn-icon h-5 w-5 text-[10px]',
+                isEditing ? '' : 'opacity-0 group-hover:opacity-100',
+              )}
+              title={t('kv.delete')}
+            >
+              ✕
+            </button>
+          </div>
+        )
+      })}
+    </>
   )
 }
 

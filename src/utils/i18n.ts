@@ -13,6 +13,7 @@ const ru: Dict = {
   'sidebar.untitled': '(без названия)',
   'sidebar.deleteCollection': 'Удалить коллекцию',
   'sidebar.deleteRequest': 'Удалить запрос',
+  'sidebar.renameHistory': 'Переименовать',
   'sidebar.collectionName': 'Название коллекции',
 
   // MethodSelect
@@ -171,6 +172,7 @@ const en: Dict = {
   'sidebar.untitled': '(untitled)',
   'sidebar.deleteCollection': 'Delete collection',
   'sidebar.deleteRequest': 'Delete request',
+  'sidebar.renameHistory': 'Rename',
   'sidebar.collectionName': 'Collection name',
 
   'method.title': 'Method',

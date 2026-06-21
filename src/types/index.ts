@@ -47,6 +47,7 @@ export interface ResponseData {
 
 export interface HistoryItem {
   id: string
+  name: string
   request: RequestConfig
   response: ResponseData
   timestamp: number

@@ -8,6 +8,7 @@ const MAX_ITEMS = 100
 interface HistoryStore {
   items: HistoryItem[]
   add: (item: HistoryItem) => void
+  rename: (id: string, name: string) => void
   remove: (id: string) => void
   clear: () => void
 }
@@ -21,6 +22,10 @@ export const useHistoryStore = create<HistoryStore>()(
           const items = [item, ...s.items].slice(0, MAX_ITEMS)
           return { items }
         }),
+      rename: (id, name) =>
+        set((s) => ({
+          items: s.items.map((i) => (i.id === id ? { ...i, name: name.trim() } : i)),
+        })),
       remove: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
       clear: () => set({ items: [] }),
     }),

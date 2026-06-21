@@ -28,6 +28,7 @@ export function useRequest() {
 
         const historyItem: HistoryItem = {
           id: uuid(),
+          name: req.name,
           request: JSON.parse(JSON.stringify(req)),
           response: res,
           timestamp: Date.now(),
