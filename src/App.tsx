@@ -66,7 +66,7 @@ export default function App() {
     <div className="flex h-screen w-screen overflow-hidden bg-app-bg text-text-primary">
       {!sidebarCollapsed && (
         <>
-          <div className="shrink-0" style={{ width: sidebarWidth }}>
+          <div className="shrink-0 min-w-0 overflow-hidden" style={{ width: sidebarWidth }}>
             <Sidebar />
           </div>
           <ResizeHandle direction="horizontal" onResize={onSidebarResize} title="↔" />
@@ -78,7 +78,7 @@ export default function App() {
       {!rustyCollapsed && (
         <>
           <ResizeHandle direction="horizontal" onResize={onRustyResize} title="↔" />
-          <div className="shrink-0" style={{ width: rustyWidth }}>
+          <div className="shrink-0 min-w-0 overflow-hidden" style={{ width: rustyWidth }}>
             <RustyPanel />
           </div>
         </>

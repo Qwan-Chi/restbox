@@ -34,7 +34,7 @@ export function MainPanel() {
       </form>
 
       <div className="flex flex-1 min-h-0">
-        <div className="shrink-0 border-r border-app-border flex flex-col" style={{ width: editorWidth }}>
+        <div className="shrink-0 border-r border-app-border flex flex-col min-w-0 overflow-hidden" style={{ width: editorWidth }}>
           <TabsEditor />
         </div>
         <ResizeHandle direction="horizontal" onResize={onEditorResize} title="↔" />

@@ -35,7 +35,7 @@ function CodeBlock({ children }: { children?: React.ReactNode }) {
       >
         {copied ? '✓ Copied' : 'Copy'}
       </button>
-      <pre>{children}</pre>
+      <pre className="overflow-x-auto">{children}</pre>
     </div>
   )
 }

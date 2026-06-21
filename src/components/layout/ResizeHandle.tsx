@@ -53,18 +53,19 @@ export function ResizeHandle({ direction, onResize, title }: Props) {
     <div
       onMouseDown={onMouseDown}
       className={cn(
-        'shrink-0 relative group transition-colors z-10',
+        'shrink-0 relative group transition-colors z-10 flex items-center justify-center',
         isHorizontal
-          ? 'w-1.5 cursor-col-resize h-full'
-          : 'h-1.5 cursor-row-resize w-full',
-        dragging ? 'bg-accent' : 'bg-app-border hover:bg-accent/60',
+          ? 'w-3 cursor-col-resize h-full'
+          : 'h-3 cursor-row-resize w-full',
+        dragging ? 'bg-accent/10' : 'hover:bg-accent/5',
       )}
       title={title}
     >
       <div
         className={cn(
-          'absolute',
-          isHorizontal ? 'inset-y-0 -left-1 -right-1' : 'inset-x-0 -top-1 -bottom-1',
+          'rounded-full transition-colors',
+          isHorizontal ? 'w-1.5 h-full' : 'h-1.5 w-full',
+          dragging ? 'bg-accent' : 'bg-app-border group-hover:bg-accent/60',
         )}
       />
     </div>

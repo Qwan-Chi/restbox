@@ -51,7 +51,7 @@ export function RustyPanel() {
 
   return (
     <aside
-      className="h-full flex flex-col bg-app-panel border-l border-app-border"
+      className="h-full flex flex-col bg-app-panel border-l border-app-border min-w-0 overflow-hidden"
     >
       <div className="flex items-center gap-2.5 px-3 py-2.5 border-b border-app-border">
         <RustyAvatar status={statusKey} size={32} />

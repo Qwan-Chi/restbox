@@ -39,7 +39,7 @@ export function ResponsePanel() {
   const problemWord = errorCount + warnCount === 1 ? t('response.problem') : t('response.problems')
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
+    <div className="flex-1 flex flex-col min-h-0 min-w-0">
       <div className="flex items-center gap-3 px-4 py-2 border-b border-app-border">
         <StatusBadge status={response.status} statusText={response.statusText} />
         <ResponseMeta response={response} />
