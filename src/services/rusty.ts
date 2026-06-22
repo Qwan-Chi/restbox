@@ -73,7 +73,7 @@ const ANTHROPIC_FALLBACK = [
 function getModelsUrl(providerId: string, baseUrl: string): string {
   switch (providerId) {
     case 'deepseek':
-      return 'https://api.deepseek.com/models'
+      return 'https://api.deepseek.com/v1/models'
     case 'openai':
       return 'https://api.openai.com/v1/models'
     case 'anthropic':

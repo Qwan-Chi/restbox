@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { cn } from '@/utils/cn'
+import { useT } from '@/utils/i18n'
 
 export function UserMenu() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
+  const t = useT()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -20,7 +22,9 @@ export function UserMenu() {
   if (!user) return null
 
   const initials = user.name.split(' ').map((p) => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
-  const providerLabel = user.provider === 'google' ? 'Google' : 'Яндекс'
+  const providerLabel =
+    user.provider === 'google' ? 'Google' : user.provider === 'yandex' ? 'Яндекс' : t('user.guest')
+  const providerIcon = user.provider === 'google' ? '🇬' : user.provider === 'yandex' ? '🟡' : '👤'
 
   return (
     <div ref={ref} className="relative border-t border-app-border">
@@ -47,14 +51,14 @@ export function UserMenu() {
             <div className="text-xs font-medium text-text-primary truncate">{user.name}</div>
             {user.email && <div className="text-[10px] text-text-secondary truncate">{user.email}</div>}
             <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-accent">
-              {user.provider === 'google' ? '🇬' : '🟡'} {providerLabel}
+              {providerIcon} {providerLabel}
             </div>
           </div>
           <button
             onClick={() => { setOpen(false); logout() }}
             className={cn('w-full text-left px-3 py-2 text-xs text-error hover:bg-error/10 transition-colors')}
           >
-            Выйти
+            {t('user.logout')}
           </button>
         </div>
       )}

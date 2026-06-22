@@ -132,8 +132,6 @@ export function JsonViewer({ data }: Props) {
     return formatJson(data)
   }, [data])
 
-  const rootOpen = useMemo(() => (search ? true : true), [search])
-
   if (typeof data === 'string') {
     return (
       <div className="font-mono text-xs text-warning whitespace-pre-wrap break-all">{data}</div>
@@ -162,7 +160,7 @@ export function JsonViewer({ data }: Props) {
       </div>
       <div className="flex-1 overflow-auto scrollbar-thin p-3">
         <pre className="font-mono text-xs leading-relaxed text-text-primary">
-          <JsonNode value={data} path="" search={search.trim()} defaultOpen={rootOpen} />
+          <JsonNode value={data} path="" search={search.trim()} defaultOpen />
         </pre>
       </div>
     </div>

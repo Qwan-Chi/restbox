@@ -116,7 +116,7 @@ export interface RustyContext {
 export type RequestTab = 'headers' | 'body' | 'params' | 'auth'
 export type ResponseTab = 'body' | 'headers' | 'timeline'
 
-export type AuthProvider = 'google' | 'yandex'
+export type AuthProvider = 'google' | 'yandex' | 'guest'
 
 export interface AuthUser {
   id: string

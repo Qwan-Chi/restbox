@@ -160,6 +160,17 @@ const ru: Dict = {
 
   // LanguageSwitcher
   'lang.switch': 'Сменить язык',
+
+  // LoginScreen
+  'login.subtitle': 'REST-клиент с AI-ассистентом Rusty',
+  'login.yandex': 'Войти через Яндекс',
+  'login.guest': 'Продолжить как гость',
+  'login.or': 'или',
+  'login.error': 'Не удалось войти',
+
+  // UserMenu
+  'user.guest': 'Гость',
+  'user.logout': 'Выйти',
 }
 
 const en: Dict = {
@@ -301,6 +312,15 @@ const en: Dict = {
   'apikey.getKey': 'Get key:',
 
   'lang.switch': 'Switch language',
+
+  'login.subtitle': 'REST client with the Rusty AI assistant',
+  'login.yandex': 'Sign in with Yandex',
+  'login.guest': 'Continue as guest',
+  'login.or': 'or',
+  'login.error': 'Sign-in failed',
+
+  'user.guest': 'Guest',
+  'user.logout': 'Sign out',
 }
 
 const DICTS: Record<Language, Dict> = { ru, en }
