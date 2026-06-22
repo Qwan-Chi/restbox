@@ -7,6 +7,7 @@ import { useThemeStore, applyTheme } from '@/store/useThemeStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { cn } from '@/utils/cn'
+import { clearYandexRedirect, fetchYandexProfile, parseYandexRedirect } from '@/services/yandexAuth'
 
 const LoginScreen = lazy(() =>
   import('@/components/auth/LoginScreen').then((m) => ({ default: m.LoginScreen })),
@@ -29,10 +30,20 @@ export default function App() {
   const theme = useThemeStore((s) => s.theme)
   const isMobile = useIsMobile()
   const user = useAuthStore((s) => s.user)
+  const login = useAuthStore((s) => s.login)
 
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
+
+  useEffect(() => {
+    const result = parseYandexRedirect()
+    if (!result) return
+    void fetchYandexProfile(result.token)
+      .then((u) => login({ ...u, expiresAt: result.expiresAt }))
+      .catch(() => {})
+      .finally(() => clearYandexRedirect())
+  }, [login])
 
   const onSidebarResize = useCallback(
     (delta: number) => {
